@@ -5,6 +5,8 @@
 -- Run as: supabase/migrations/0001_init.sql
 -- ============================================================================
 
+begin;
+
 -- ----------------------------------------------------------------------------
 -- Extensions
 -- ----------------------------------------------------------------------------
@@ -384,3 +386,5 @@ alter publication supabase_realtime add table public.votes;
 alter publication supabase_realtime add table public.tips;
 alter publication supabase_realtime add table public.budget_lines;
 alter publication supabase_realtime add table public.notifications;
+
+commit;
