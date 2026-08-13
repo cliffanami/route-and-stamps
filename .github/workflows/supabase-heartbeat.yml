@@ -1,0 +1,25 @@
+name: Supabase heartbeat
+
+# Free-tier Supabase projects pause after a week of inactivity (PRD §12c).
+# A lightweight scheduled read keeps the project alive without touching data.
+# Requires repo secrets SUPABASE_URL and SUPABASE_ANON_KEY (Settings → Secrets
+# and variables → Actions), set once the Supabase project exists.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1,4" # Mondays and Thursdays, 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          curl --fail --silent --show-error \
+            "${SUPABASE_URL}/rest/v1/trips?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}

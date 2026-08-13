@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/*
+ * TODO(M0, blocked): import the vendored Broadsheet stylesheet here once
+ * design-system/styles.css lands — see src/styles/broadsheet/README.md.
+ *   @import "../styles/broadsheet/styles.css";
+ * Broadsheet owns all color/type/component tokens (ARCHITECTURE.md §1b);
+ * Tailwind here stays layout-only (CONVENTIONS.md §5).
+ */
+
+:root {
+  --font-heading: var(--font-source-serif-4);
+  --font-body: var(--font-source-serif-4);
+}
+
+body {
+  font-family: var(--font-body), serif;
+}
