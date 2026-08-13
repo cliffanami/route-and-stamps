@@ -335,8 +335,10 @@ skip_nonce_check = false
 email_optional = false
 
 # Route & Stamps: only external provider actually used (ARCHITECTURE.md §1).
+# Disabled for now — flip to true once the Google Cloud OAuth client exists
+# and SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID/_SECRET are set.
 [auth.external.google]
-enabled = true
+enabled = false
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
 redirect_uri = ""

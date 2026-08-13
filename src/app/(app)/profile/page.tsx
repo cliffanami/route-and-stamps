@@ -8,7 +8,7 @@ export default async function ProfilePage() {
 
   return (
     <main className="p-6">
-      <h1 className="text-xl">Profile</h1>
+      <h1>Profile</h1>
       <p>{user?.email}</p>
     </main>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/Button";
 
 export default function LoginPage() {
   const supabase = createClient();
@@ -16,11 +17,10 @@ export default function LoginPage() {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-2xl">Route & Stamps</h1>
-      {/* TODO: replace with ui/Button once Broadsheet's .btn is vendored (ARCHITECTURE.md §1b) */}
-      <button onClick={signInWithGoogle} className="border px-4 py-2">
+      <h1>Route & Stamps</h1>
+      <Button variant="primary" onClick={signInWithGoogle}>
         Sign in with Google
-      </button>
+      </Button>
     </main>
   );
 }

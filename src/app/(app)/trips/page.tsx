@@ -11,7 +11,7 @@ export default async function TripsPage() {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-2 p-8">
-      <h1 className="text-xl">No trip yet</h1>
+      <h1>No trip yet</h1>
       <p>Seed the Japan 2026 trip to get started (ROADMAP.md M0).</p>
     </main>
   );
