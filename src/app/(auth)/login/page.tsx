@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/Button";
 export default function LoginPage() {
   const supabase = createClient();
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [error, setError] = useState<string | null>(null);
+  const [checkEmail, setCheckEmail] = useState(false);
 
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
@@ -20,22 +22,34 @@ export default function LoginPage() {
   }
 
   // TODO(M0, temporary): remove once Google OAuth credentials exist
-  // (ARCHITECTURE.md §1 names Google as the only provider). Magic-link
-  // fallback so sign-in can be tested before Google Cloud Console is set up.
-  async function signInWithEmail(event: FormEvent) {
+  // (ARCHITECTURE.md §1 names Google as the only provider). Email+password
+  // fallback so sign-in can be tested without Google Cloud Console or
+  // depending on Supabase's outbound email working.
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/trips`,
-      },
-    });
+    setCheckEmail(false);
+
+    if (mode === "sign-up") {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      // If "Confirm email" is on in Supabase Auth settings, signUp won't
+      // return a session yet — an email confirmation is still required.
+      if (!data.session) {
+        setCheckEmail(true);
+      }
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setError(error.message);
       return;
     }
-    setSent(true);
+    window.location.href = "/trips";
   }
 
   return (
@@ -45,21 +59,44 @@ export default function LoginPage() {
         Sign in with Google
       </Button>
 
-      {sent ? (
-        <p>Check your email for a sign-in link.</p>
+      {checkEmail ? (
+        <p>Account created — check your email to confirm it before signing in.</p>
       ) : (
-        <form onSubmit={signInWithEmail} className="field flex flex-col items-center gap-2">
-          <label htmlFor="email">Or sign in with email (dev only)</label>
+        <form onSubmit={handleSubmit} className="field flex flex-col items-center gap-2">
+          <label htmlFor="email">
+            {mode === "sign-up" ? "Create account (dev only)" : "Sign in with email (dev only)"}
+          </label>
           <input
             id="email"
             type="email"
             required
+            placeholder="Email"
             className="input"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
+          <input
+            id="password"
+            type="password"
+            required
+            minLength={6}
+            placeholder="Password"
+            className="input"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
           <Button type="submit" variant="secondary">
-            Send magic link
+            {mode === "sign-up" ? "Create account" : "Sign in"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setMode(mode === "sign-up" ? "sign-in" : "sign-up");
+              setError(null);
+            }}
+          >
+            {mode === "sign-up" ? "Have an account? Sign in" : "No account? Create one"}
           </Button>
           {error && <p className="text-muted">{error}</p>}
         </form>
