@@ -296,6 +296,27 @@ alter table public.packing_items    enable row level security;
 alter table public.tips             enable row level security;
 alter table public.notifications    enable row level security;
 
+-- Membership check as a SECURITY DEFINER function, not an inline subquery.
+-- trip_members' own policy needs to check trip_members membership, and an
+-- inline `exists (select 1 from trip_members ...)` inside that policy would
+-- recurse into itself (and, transitively, break every other table's policy
+-- that checks membership the same way). A SECURITY DEFINER function's body
+-- runs with the privileges of its owner (the migration role, which bypasses
+-- RLS), so this check never re-enters policy evaluation. Standard Supabase
+-- pattern for recursive RLS: https://supabase.com/docs/guides/database/postgres/row-level-security#recursive-rls-policies
+create function public.is_trip_member(p_trip_id uuid, p_user_id uuid default auth.uid())
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.trip_members
+    where trip_id = p_trip_id and user_id = p_user_id
+  );
+$$;
+
 -- profiles: readable by anyone authenticated (needed to show "added by Sally");
 -- writable only by the owner.
 create policy "profiles_select_authenticated" on public.profiles
@@ -305,71 +326,51 @@ create policy "profiles_update_own" on public.profiles
 
 -- trips: visible/editable only to members.
 create policy "trips_select_member" on public.trips
-  for select using (
-    exists (select 1 from public.trip_members tm where tm.trip_id = id and tm.user_id = auth.uid())
-  );
+  for select using (public.is_trip_member(id));
 create policy "trips_update_member" on public.trips
-  for update using (
-    exists (select 1 from public.trip_members tm where tm.trip_id = id and tm.user_id = auth.uid())
-  );
+  for update using (public.is_trip_member(id));
 create policy "trips_insert_own" on public.trips
   for insert with check (created_by = auth.uid());
 
 -- trip_members: visible to other members of the same trip; a user can always see their own rows.
 create policy "trip_members_select" on public.trip_members
   for select using (
-    user_id = auth.uid()
-    or exists (select 1 from public.trip_members tm2 where tm2.trip_id = trip_id and tm2.user_id = auth.uid())
+    user_id = auth.uid() or public.is_trip_member(trip_id)
   );
 create policy "trip_members_insert_via_invite" on public.trip_members
   for insert with check (user_id = auth.uid());  -- redemption path validated in the invite Route Handler
 
 -- trip_invites: only members can create; token itself is the read-access control for redemption.
 create policy "trip_invites_select_member" on public.trip_invites
-  for select using (
-    exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid())
-  );
+  for select using (public.is_trip_member(trip_id));
 create policy "trip_invites_insert_member" on public.trip_invites
-  for insert with check (
-    exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid())
-  );
+  for insert with check (public.is_trip_member(trip_id));
 
 -- Generic trip-scoped policy, applied identically to stops/places/votes(via place)/
 -- budget_lines/packing_items/tips/notifications(via recipient).
 
 create policy "stops_all_member" on public.stops
-  for all using (
-    exists (select 1 from public.trip_members tm where tm.trip_id = stops.trip_id and tm.user_id = auth.uid())
-  );
+  for all using (public.is_trip_member(stops.trip_id));
 
 create policy "places_all_member" on public.places
-  for all using (
-    exists (select 1 from public.trip_members tm where tm.trip_id = places.trip_id and tm.user_id = auth.uid())
-  );
+  for all using (public.is_trip_member(places.trip_id));
 
 create policy "votes_all_member" on public.votes
   for all using (
     exists (
       select 1 from public.places p
-      join public.trip_members tm on tm.trip_id = p.trip_id
-      where p.id = votes.place_id and tm.user_id = auth.uid()
+      where p.id = votes.place_id and public.is_trip_member(p.trip_id)
     )
   );
 
 create policy "budget_lines_all_member" on public.budget_lines
-  for all using (
-    exists (select 1 from public.trip_members tm where tm.trip_id = budget_lines.trip_id and tm.user_id = auth.uid())
-  );
+  for all using (public.is_trip_member(budget_lines.trip_id));
 
 create policy "packing_items_all_member" on public.packing_items
-  for all using (
-    exists (select 1 from public.trip_members tm where tm.trip_id = packing_items.trip_id and tm.user_id = auth.uid())
-  );
+  for all using (public.is_trip_member(packing_items.trip_id));
 
 create policy "tips_all_member" on public.tips
-  for all using (
-    exists (select 1 from public.trip_members tm where tm.trip_id = tips.trip_id and tm.user_id = auth.uid())
-  );
+  for all using (public.is_trip_member(tips.trip_id));
 
 -- notifications: a user only ever sees their own.
 create policy "notifications_select_own" on public.notifications
