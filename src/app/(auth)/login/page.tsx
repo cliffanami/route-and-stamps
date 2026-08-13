@@ -8,6 +8,7 @@ export default function LoginPage() {
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
@@ -23,12 +24,17 @@ export default function LoginPage() {
   // fallback so sign-in can be tested before Google Cloud Console is set up.
   async function signInWithEmail(event: FormEvent) {
     event.preventDefault();
-    await supabase.auth.signInWithOtp({
+    setError(null);
+    const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/trips`,
       },
     });
+    if (error) {
+      setError(error.message);
+      return;
+    }
     setSent(true);
   }
 
@@ -55,6 +61,7 @@ export default function LoginPage() {
           <Button type="submit" variant="secondary">
             Send magic link
           </Button>
+          {error && <p className="text-muted">{error}</p>}
         </form>
       )}
     </main>
