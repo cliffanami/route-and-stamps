@@ -15,10 +15,14 @@ interface RouteSpineProps {
 }
 
 export function RouteSpine({ tripId }: RouteSpineProps) {
-  const { data: stops = [], isLoading: stopsLoading } = useStops(tripId);
-  const { data: places = [] } = usePlaces(tripId);
-  const { data: votes = [] } = useVotes(tripId);
-  const { data: members = [] } = useTripMembers(tripId);
+  const stopsQuery = useStops(tripId);
+  const placesQuery = usePlaces(tripId);
+  const votesQuery = useVotes(tripId);
+  const membersQuery = useTripMembers(tripId);
+  const { data: stops = [], isLoading: stopsLoading } = stopsQuery;
+  const { data: places = [] } = placesQuery;
+  const { data: votes = [] } = votesQuery;
+  const { data: members = [] } = membersQuery;
   useRealtimeSubscription("places", tripId);
   useRealtimeSubscription("votes", tripId);
 
@@ -40,6 +44,18 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
           votes.find((v) => v.place_id === place.id && v.user_id === userId)?.level !== "skip",
       )
     : places;
+
+  const firstError = [stopsQuery, placesQuery, votesQuery, membersQuery].find(
+    (q) => q.error,
+  )?.error;
+
+  if (firstError) {
+    return (
+      <p className="px-6 py-4 text-muted">
+        Couldn&rsquo;t load the route: {firstError instanceof Error ? firstError.message : String(firstError)}
+      </p>
+    );
+  }
 
   if (stopsLoading) {
     return <p className="px-6 py-4 text-muted">Loading…</p>;
