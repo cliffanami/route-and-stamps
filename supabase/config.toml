@@ -335,10 +335,10 @@ skip_nonce_check = false
 email_optional = false
 
 # Route & Stamps: only external provider actually used (ARCHITECTURE.md §1).
-# Disabled for now — flip to true once the Google Cloud OAuth client exists
-# and SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID/_SECRET are set.
+# Configured directly in the hosted Supabase dashboard (Auth > Providers);
+# this section only matters if `supabase start` is run for local Docker dev.
 [auth.external.google]
-enabled = false
+enabled = true
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
 redirect_uri = ""
