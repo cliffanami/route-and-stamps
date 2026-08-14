@@ -1,8 +1,11 @@
-export default function MapPage() {
-  return (
-    <div className="p-6">
-      <h1>Map</h1>
-      <p>Map view coming soon.</p>
-    </div>
-  );
+import { MapViewLoader } from "@/components/map/MapViewLoader";
+
+export default async function MapPage({
+  params,
+}: {
+  params: Promise<{ tripId: string }>;
+}) {
+  const { tripId } = await params;
+
+  return <MapViewLoader tripId={tripId} />;
 }
