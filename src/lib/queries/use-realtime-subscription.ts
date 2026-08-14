@@ -13,24 +13,39 @@ export function useRealtimeSubscription(table: "places" | "votes", tripId: strin
 
   useEffect(() => {
     const supabase = createClient();
-    const channel = supabase
-      .channel(`${table}-${tripId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table,
-          ...(table === "places" ? { filter: `trip_id=eq.${tripId}` } : {}),
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: [table, tripId] });
-        },
-      )
-      .subscribe();
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    // Realtime's auth token sync happens via an async side effect of the
+    // client's own session hydration — subscribing before that settles
+    // joins the channel with no/stale auth, so every event gets silently
+    // filtered out by RLS with no error anywhere. Explicitly waiting for
+    // the session first is the fix (confirmed by watching a subscription
+    // reach SUBSCRIBED and then never receive an insert made moments
+    // later from a different session, until this wait was added).
+    supabase.auth.getSession().then(() => {
+      if (cancelled) return;
+
+      channel = supabase
+        .channel(`${table}-${tripId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table,
+            ...(table === "places" ? { filter: `trip_id=eq.${tripId}` } : {}),
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: [table, tripId] });
+          },
+        )
+        .subscribe();
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
     };
   }, [table, tripId, queryClient]);
 }

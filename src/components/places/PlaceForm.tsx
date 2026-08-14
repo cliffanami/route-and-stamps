@@ -114,9 +114,12 @@ export function PlaceForm({ tripId }: PlaceFormProps) {
       </Button>
       {locateError && <p className="text-muted">{locateError}</p>}
 
-      {located && (
+      {stops.length > 0 && (
         <div className="field">
           <label htmlFor="stop">Nearest stop</label>
+          {/* Always available, not gated on a successful geocode — this is
+              the manual fallback ROADMAP.md M1 calls for, so it has to work
+              precisely when auto-assignment can't (e.g. no geocode match). */}
           <select
             id="stop"
             className="input"
@@ -130,7 +133,7 @@ export function PlaceForm({ tripId }: PlaceFormProps) {
               </option>
             ))}
           </select>
-          {located.town && <p className="text-muted">Located in {located.town}</p>}
+          {located?.town && <p className="text-muted">Located in {located.town}</p>}
         </div>
       )}
 

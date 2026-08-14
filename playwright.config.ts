@@ -15,8 +15,16 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {
-    command: "npm run dev",
+    // Not `next dev`: dev mode's on-demand per-route compilation triggers
+    // Fast Refresh (component remount) on first visit to each route, which
+    // tears down and re-establishes realtime subscriptions mid-test —
+    // diagnosed by watching a subscription reach SUBSCRIBED and then get
+    // torn down again by another rebuild before the event it was waiting
+    // for arrived. A production build doesn't have this churn, and it's
+    // what real users actually run.
+    command: "npm run build && npm run start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
   },
 });
