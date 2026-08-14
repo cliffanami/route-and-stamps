@@ -1,5 +1,3 @@
-@AGENTS.md
-
 # Route & Stamps
 
 Collaborative trip-planning PWA for two people (v1), architected to extend to
@@ -11,7 +9,7 @@ Read ARCHITECTURE.md, CONVENTIONS.md, and the relevant milestone in ROADMAP.md.
 Don't re-derive architectural decisions already made in those files — follow them.
 
 ## Stack
-Next.js 15 (App Router) + TypeScript, Supabase (Postgres/Auth/Realtime/Storage),
+Next.js 16 (App Router) + TypeScript, Supabase (Postgres/Auth/Realtime/Storage),
 Serwist for PWA/offline, TanStack Query, React Hook Form + Zod. Full rationale
 in ARCHITECTURE.md §1.
 

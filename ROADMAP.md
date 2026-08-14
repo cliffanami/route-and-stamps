@@ -10,7 +10,7 @@ Milestones map directly to PRD v0.5 §15's phased plan, broken down into enginee
 
 **Goal:** empty-but-real app. Auth works, one trip exists, nothing else does yet — and it's already wearing the real design system, not a placeholder.
 
-- Repo scaffold (Next.js 15, TypeScript, Tailwind for layout only, ESLint/Prettier)
+- Repo scaffold (Next.js 16, TypeScript, Tailwind for layout only, ESLint/Prettier)
 - Broadsheet vendored into `src/styles/broadsheet/`, `styles.css` imported globally, Source Serif 4 loaded via `next/font/google`, `@phosphor-icons/react` installed (see ARCHITECTURE.md §1b)
 - Base `ui/` components built as thin wrappers around Broadsheet's classes (Button, Tag, Card, Dialog) — the foundation every later milestone's screens build on, so this has to happen first, not at the end
 - Supabase project created; `schema.sql` applied as the first migration
@@ -39,6 +39,19 @@ Milestones map directly to PRD v0.5 §15's phased plan, broken down into enginee
 - Realtime: a vote or place added on one device appears on the other within ~2s (PRD §12c performance NFR) — this is the milestone to actually test that target against, not just assume it
 
 **Acceptance:** you add a place on your phone; it appears on Sally's phone, unrefreshed, within a couple seconds. You both vote; a mutual "Must go" visibly flags.
+
+---
+
+## M1.5 — Smart place-name parsing
+
+Slotted in after M1 rather than inside it, since M1 was already underway when this was scoped — additive, doesn't touch anything M1 already shipped. Full design in `ARCHITECTURE.md` §1c.
+
+- Tier 1 heuristic parser (`lib/geo/parse-place-mention.ts`) in front of the existing Nominatim call — free, always on
+- Tier 2 optional Claude-powered extraction (`/api/extract-place`), gated by `ENABLE_AI_PLACE_EXTRACTION` (default off), called only when Tier 1 is inconclusive
+- Graceful fallback to Tier 1 / manual Inbox on any Tier 2 failure
+- Anthropic Console per-key spend limit set as an independent backstop, before this ever gets toggled on for real
+
+**Acceptance:** "KICC Nairobi, Kenya" resolves via Tier 1 alone with the toggle off. With the toggle on, a messier free-text blurb that Tier 1 can't parse successfully falls through to Tier 2 and still resolves. Killing the Anthropic API key (simulating a budget exhaustion) doesn't break adding a place — it just falls back silently.
 
 ---
 

@@ -21,7 +21,7 @@ Pulled straight from the PRD because they constrain every choice below:
 
 | Layer | Choice | Why this, not the alternatives |
 |---|---|---|
-| **Frontend framework** | Next.js 15 (App Router), TypeScript, React 19 | Server Components cut client JS for content-heavy views (Route, Tips); Route Handlers give us the 2–3 server-side endpoints we actually need without standing up a separate backend. The realistic alternative — Vite + React Router SPA — would need a hand-rolled backend for the geocode/embed proxies anyway, for no real benefit at this scale. |
+| **Frontend framework** | Next.js 16 (App Router), TypeScript, React 19 | Server Components cut client JS for content-heavy views (Route, Tips); Route Handlers give us the 2–3 server-side endpoints we actually need without standing up a separate backend. The realistic alternative — Vite + React Router SPA — would need a hand-rolled backend for the geocode/embed proxies anyway, for no real benefit at this scale. |
 | **Styling** | Broadsheet design system (vendored `styles.css` + `theme.json`) for color/type/component classes; Tailwind CSS v4 for layout-only utilities (flex/grid/spacing/breakpoints) | Broadsheet ships as its own plain-CSS token sheet and documented component classes (`.btn`, `.card`, `.tag`, `.field`, `.dialog`…) — its own guide is explicit that consuming projects should use those classes and CSS custom properties directly rather than re-deriving them into a parallel system. Re-expressing the same tokens as a Tailwind theme config would be exactly the "inventing parallel ones" the guide warns against, and risks drifting from the source of truth. Tailwind stays for what Broadsheet's CSS doesn't cover — responsive layout utilities — not for color or component styling. |
 | **Icons** | `@phosphor-icons/react`, duotone weight only | Locked by `theme.json` (`iconSet: "phosphor-duotone"`) and reinforced in the written guide — not a free choice per screen. |
 | **Type** | Source Serif 4 (Google Fonts), loaded via `next/font/google` | Same typeface for heading and body, per the design system — no sans-serif anywhere in UI chrome. `next/font` avoids the render-blocking `@import` the vendored CSS uses by default; swap it at integration time (see §3). |
@@ -50,6 +50,17 @@ Pulled straight from the PRD because they constrain every choice below:
 
 ---
 
+## 1d. Next.js version note
+
+This document targets **Next.js 16**, not 15 — worth being explicit since my own knowledge cutoff predates 16's release, and a repo running current `create-next-app` will already reflect this. Two breaking changes land directly on code this document specifies:
+
+- **`params`/`searchParams` are hard-async.** 15 shipped these as a soft change with a compatibility shim; 16 removed the shim. Every dynamic route in §3's project structure (`[tripId]`, `[placeId]`, `[token]`) must `await params` — a synchronous destructure throws, it doesn't just warn.
+- **The root middleware file is `proxy.ts`, not `middleware.ts`.** The project structure in §3 didn't originally show this file explicitly; it's added there now. Don't confuse this with `lib/supabase/middleware.ts` — that's an internally-named helper function Next.js doesn't treat specially, and its name doesn't need to change; `src/proxy.ts` is the one that imports and calls it.
+
+If `node_modules/next/dist/docs/` (or the AGENTS.md block Next.js itself generates) ever disagrees with a specific API detail in these documents, treat the local docs as authoritative — they reflect the actual installed version; this document reflects my training data plus this one correction.
+
+---
+
 ## 1b. Design system integration (Broadsheet)
 
 The design handoff (`design-system/` in this bundle: `styles.css`, `theme.json`, `print-plates.js`, `broadsheet-guide.md`) is high-fidelity and prescriptive — its own guide says to use its exact values and classes rather than approximating. Two things worth knowing before M0:
@@ -61,12 +72,28 @@ The design handoff (`design-system/` in this bundle: `styles.css`, `theme.json`,
 
 ---
 
+## 1c. Place-name resolution — cascading, free-first
+
+Added after M1 was already underway (see `ROADMAP.md` M1.5) — deliberately additive, doesn't touch the `places` schema, the existing Nominatim Route Handler's contract, or anything realtime/vote-related. Only changes *how a place gets its name and coordinates* before the existing flow takes over.
+
+**The problem:** a person pastes a description like "posted a video about KICC Nairobi, Kenya" — one blurb mixing the place, its location, and often some "why" commentary. Asking them to manually split that into a clean search query is friction the core loop (PRD §6.1) shouldn't have.
+
+**Tier 1 — free, always on, no toggle:** a local heuristic parser (`lib/geo/parse-place-mention.ts`, pure logic, no external call) recognizes common patterns — `<Name>, <City>, <Country>`, `<Name> in <City>` — and passes the cleaned result straight to the **existing** Nominatim search Route Handler. No new endpoint; this is a preprocessing step in front of a call that already exists. Nominatim's own fuzzy matching does real work here too — a reasonably-formed free-text query often resolves without any extraction at all.
+
+**Tier 2 — optional, toggled, cascading fallback only:** when Tier 1 returns nothing or multiple ambiguous matches, and only then, a new Route Handler (`/api/extract-place`) calls the Claude API to separate name from location and expand abbreviations ("KICC" → "Kenyatta International Convention Centre"). Gated by `ENABLE_AI_PLACE_EXTRACTION` (env var, default **off**) — flip without a redeploy. This is never the first call made; it's a fallback for the minority of inputs Tier 1 can't parse, which keeps real cost low even with the toggle on.
+
+**Resilience, regardless of the toggle:** if the Tier 2 call errors, times out, or the API key hits its spend limit, catch it and fall back to Tier 1's best-effort result or the existing manual Inbox flow — same graceful-degradation philosophy as offline handling (`CONVENTIONS.md` §4), never a hard failure on the core add-a-place loop.
+
+**Cost backstop:** independent of the app-level toggle, set a hard per-key spend limit in the Anthropic Console — a real cutoff, not just an alert. Two independent safety nets, not one.
+
+---
+
 ## 2. System architecture
 
 ```
 ┌─────────────────────────────┐
 │   Mobile Web App (PWA)      │
-│   Next.js 15 · App Router   │
+│   Next.js 16 · App Router   │
 │   Serwist service worker    │
 └───────────┬──────────────────┘
             │
@@ -118,6 +145,9 @@ route-and-stamps/
 │   │   ├── manifest.ts                        # PWA manifest
 │   │   ├── sw.ts                               # Serwist service worker entry
 │   │   └── layout.tsx
+│   ├── proxy.ts                    # Next.js 16's root middleware convention (renamed from
+│   │                                 # middleware.ts) — imports lib/supabase/middleware.ts's
+│   │                                 # session-refresh helper; see §1d
 │   ├── components/
 │   │   ├── ui/                # thin wrappers around Broadsheet classes (Button, Tag, Card, Dialog…)
 │   │   ├── route/              # RouteSpine, StopCard, PlaceRow

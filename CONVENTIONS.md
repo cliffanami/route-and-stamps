@@ -43,6 +43,7 @@ When in doubt: **can this row be read/written under RLS as the current user? The
 
 ## 5. Component conventions
 
+- **`params`/`searchParams` are async (Next.js 16).** Every dynamic route (`[tripId]`, `[placeId]`, `[token]`) takes `params: Promise<{...}>` and requires `await params` — no compatibility shim exists anymore, so a synchronous destructure throws at request time, not just a deprecation warning. See ARCHITECTURE.md §1d.
 - **Server Components by default.** Add `'use client'` only when the component needs interactivity, browser APIs (geolocation, IndexedDB), or a hook that requires it (TanStack Query, React Hook Form). Content-heavy, read-only views (Tips list, Route view's static parts) should be Server Components wherever possible — real payload-size wins for a mobile-first app.
 - One component per file; colocate a component's own types directly above it rather than in a separate types file unless the type is shared across features.
 - Props interfaces named `{ComponentName}Props`.
