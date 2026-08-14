@@ -1,8 +1,16 @@
-export default function AddPlacePage() {
+import { PlaceForm } from "@/components/places/PlaceForm";
+
+export default async function AddPlacePage({
+  params,
+}: {
+  params: Promise<{ tripId: string }>;
+}) {
+  const { tripId } = await params;
+
   return (
-    <div className="p-6">
-      <h1>Add a Place</h1>
-      <p>Quick-add flow coming in M1.</p>
+    <div>
+      <h1 className="px-6 pt-6">Add a Place</h1>
+      <PlaceForm tripId={tripId} />
     </div>
   );
 }
