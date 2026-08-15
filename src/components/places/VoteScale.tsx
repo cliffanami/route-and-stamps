@@ -18,6 +18,12 @@ const LEVELS: { value: VoteLevel; label: string; bg: string; fg: string }[] = [
   { value: "skip", label: "Skip", bg: "var(--color-accent-2)", fg: "var(--color-bg)" },
 ];
 
+// Shared with PlaceRow, which shows other members' votes next to the
+// current user's own VoteScale — one source of truth for the label text.
+export const VOTE_LEVEL_LABEL: Record<VoteLevel, string> = Object.fromEntries(
+  LEVELS.map((level) => [level.value, level.label]),
+) as Record<VoteLevel, string>;
+
 export function VoteScale({ value, onChange, disabled }: VoteScaleProps) {
   return (
     <div className="seg" role="radiogroup" aria-label="Your vote">
