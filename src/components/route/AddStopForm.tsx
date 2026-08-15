@@ -6,6 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import {
+  LocationSearchField,
+  type LocationSearchResult,
+} from "@/components/places/LocationSearchField";
 import { useAddStop } from "@/lib/queries/use-stops";
 
 type GeocodeResult = { lat: number; lng: number; town: string | null };
@@ -22,7 +26,6 @@ async function geocode(query: string): Promise<GeocodeResult | null> {
 }
 
 const detailsSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(200),
   date_label: z.string().trim().max(100).optional().or(z.literal("")),
 });
 
@@ -45,22 +48,28 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
   const {
     register,
     handleSubmit,
-    getValues,
-    setError,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { isSubmitting },
   } = useForm<DetailsValues>({ resolver: zodResolver(detailsSchema) });
 
+  const [name, setName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
   const [geocoding, setGeocoding] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
   const [located, setLocated] = useState<Located | null>(null);
 
+  function handleSearchSelect(result: LocationSearchResult) {
+    setName(result.label.split(",")[0].trim());
+    setLocateError(null);
+    setLocated({ lat: result.lat, lng: result.lng, town: result.town });
+  }
+
   async function handleLocate() {
-    const name = getValues("name");
-    if (!name?.trim()) {
-      setError("name", { message: "Enter a name first" });
+    if (!name.trim()) {
+      setNameError("Enter a name first");
       return;
     }
+    setNameError(null);
 
     setGeocoding(true);
     setLocateError(null);
@@ -91,11 +100,15 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
   }
 
   async function onSubmit(values: DetailsValues) {
+    if (!name.trim()) {
+      setNameError("Enter a name first");
+      return;
+    }
     if (!located) return;
 
     try {
       await addStop.mutateAsync({
-        name: values.name,
+        name,
         date_label: values.date_label || null,
         lat: located.lat,
         lng: located.lng,
@@ -103,6 +116,7 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
       });
       showToast("Stop added");
       reset();
+      setName("");
       setLocated(null);
       onDone();
     } catch (err) {
@@ -114,11 +128,19 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-      <div className="field">
-        <label htmlFor="stop-name">Name</label>
-        <input id="stop-name" className="input" {...register("name")} />
-        {errors.name && <p className="text-muted">{errors.name.message}</p>}
-      </div>
+      <LocationSearchField
+        id="stop-name"
+        label="Name"
+        value={name}
+        onChange={(value) => {
+          setName(value);
+          setNameError(null);
+        }}
+        onSelect={handleSearchSelect}
+        placeholder="Start typing a town or city…"
+        required
+      />
+      {nameError && <p className="text-muted">{nameError}</p>}
 
       <Button
         type="button"
