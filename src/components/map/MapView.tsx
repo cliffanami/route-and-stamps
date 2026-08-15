@@ -7,29 +7,17 @@ import Link from "next/link";
 import { useStops } from "@/lib/queries/use-stops";
 import { usePlaces } from "@/lib/queries/use-places";
 import { CurrentPositionMarker } from "./CurrentPositionMarker";
+import { circleIcon } from "./circle-icon";
+import { TILE_LAYER_URL, TILE_LAYER_SUBDOMAINS, TILE_LAYER_ATTRIBUTION } from "./tile-layer-config";
 
 interface MapViewProps {
   tripId: string;
 }
 
-// Plain colored circles via DivIcon, not Leaflet's default pin graphic —
-// avoids the marker-image asset-path config Leaflet needs under Next.js
-// bundling, and reads as Broadsheet rather than generic-map-library.
 // Both stops and places stay in the cyan accent family, differentiated by
 // size/fill rather than a second accent color (CONVENTIONS.md §5b: never
 // both accents in one small component — and a map with both marker types
 // visible at once is exactly that component).
-function circleIcon(diameter: number, filled: boolean) {
-  return L.divIcon({
-    className: "",
-    html: `<div style="width:${diameter}px;height:${diameter}px;border-radius:50%;background:${
-      filled ? "var(--color-accent)" : "var(--color-bg)"
-    };border:2px solid var(--color-accent);box-shadow:var(--shadow-sm);"></div>`,
-    iconSize: [diameter, diameter],
-    iconAnchor: [diameter / 2, diameter / 2],
-  });
-}
-
 const stopIcon = circleIcon(16, true);
 const placeIcon = circleIcon(12, false);
 
@@ -57,18 +45,10 @@ export function MapView({ tripId }: MapViewProps) {
         boundsOptions={{ padding: [32, 32] }}
         className="h-full w-full"
       >
-        {/* Standard OSM raster tiles bake place labels into the image in the
-        local script (e.g. 東京都 rather than Tokyo) — unlike the Nominatim
-        proxy, there's no accept-language header that can fix this, since
-        tiles are pre-rendered PNGs cached by URL and can't vary per
-        requester (confirmed Wikimedia's "osm-intl" style doesn't either,
-        for the same caching reason). CARTO's Voyager basemap renders the
-        same OSM data with labels already romanized at the tile level, and
-        is still free and keyless. */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
-          subdomains="abcd"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url={TILE_LAYER_URL}
+          subdomains={TILE_LAYER_SUBDOMAINS}
+          attribution={TILE_LAYER_ATTRIBUTION}
         />
 
         {stops.map((stop) => (

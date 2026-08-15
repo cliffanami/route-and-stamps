@@ -12,3 +12,26 @@
   --font-heading: var(--font-source-serif-4);
   --font-body: var(--font-source-serif-4);
 }
+
+/* Current-position map marker (ROADMAP.md M6) — stays in the cyan accent
+   family rather than reaching for magenta, since stop/place markers on the
+   same map already use cyan and Broadsheet's rule is one accent per
+   component, never both together (ARCHITECTURE.md §1b). A pulse is what
+   makes "you are here" read as distinct from the static itinerary pins. */
+@keyframes position-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+.position-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-accent);
+  animation: position-pulse 1.8s ease-out infinite;
+}
