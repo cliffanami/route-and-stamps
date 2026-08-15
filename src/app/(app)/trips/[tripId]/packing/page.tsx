@@ -1,8 +1,11 @@
-export default function PackingPage() {
-  return (
-    <div className="p-6">
-      <h1>Packing</h1>
-      <p>No packing items added yet.</p>
-    </div>
-  );
+import { PackingView } from "@/components/packing/PackingView";
+
+export default async function PackingPage({
+  params,
+}: {
+  params: Promise<{ tripId: string }>;
+}) {
+  const { tripId } = await params;
+
+  return <PackingView tripId={tripId} />;
 }
