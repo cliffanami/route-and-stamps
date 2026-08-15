@@ -33,7 +33,9 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    supabase.auth
+      .getUser()
+      .then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
   const memberIds = members.map((m) => m.user_id);
@@ -41,7 +43,8 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
   const visiblePlaces = hideSkipped
     ? places.filter(
         (place) =>
-          votes.find((v) => v.place_id === place.id && v.user_id === userId)?.level !== "skip",
+          votes.find((v) => v.place_id === place.id && v.user_id === userId)
+            ?.level !== "skip",
       )
     : places;
 
@@ -52,7 +55,8 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
   if (firstError) {
     return (
       <p className="px-6 py-4 text-muted">
-        Couldn&rsquo;t load the route: {firstError instanceof Error ? firstError.message : String(firstError)}
+        Couldn&rsquo;t load the route:{" "}
+        {firstError instanceof Error ? firstError.message : String(firstError)}
       </p>
     );
   }
@@ -69,7 +73,9 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
 
   return (
     <div className="flex flex-col gap-8 p-6">
-      {places.length === 0 && <p className="text-muted">No places added yet.</p>}
+      {places.length === 0 && (
+        <p className="text-muted">No places added yet.</p>
+      )}
 
       <label className="field flex flex-row items-center gap-2">
         <input
@@ -81,9 +87,11 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
       </label>
 
       {stops.map((stop) => {
-        const stopPlaces = visiblePlaces.filter((place) => place.nearest_stop_id === stop.id);
+        const stopPlaces = visiblePlaces.filter(
+          (place) => place.nearest_stop_id === stop.id,
+        );
         return (
-          <StopCard key={stop.id} stop={stop}>
+          <StopCard key={stop.id} tripId={tripId} stop={stop}>
             {stopPlaces.length === 0 ? (
               <p className="text-muted">No places here yet.</p>
             ) : (

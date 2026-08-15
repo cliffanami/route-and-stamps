@@ -1,8 +1,11 @@
-export default function BudgetPage() {
-  return (
-    <div className="p-6">
-      <h1>Budget</h1>
-      <p>No cost lines added yet.</p>
-    </div>
-  );
+import { BudgetView } from "@/components/budget/BudgetView";
+
+export default async function BudgetPage({
+  params,
+}: {
+  params: Promise<{ tripId: string }>;
+}) {
+  const { tripId } = await params;
+
+  return <BudgetView tripId={tripId} />;
 }
