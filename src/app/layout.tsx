@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Source_Serif_4 } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -17,6 +17,21 @@ const sourceSerif = Source_Serif_4({
 export const metadata: Metadata = {
   title: "Route & Stamps",
   description: "Collaborative trip planning for two.",
+  appleWebApp: {
+    title: "Route & Stamps",
+    // iOS reads apple-touch-icon directly, not the web manifest.
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/icons/icon-192.png",
+  },
+};
+
+// theme_color lives here, not in `metadata`, since Next 14 (ARCHITECTURE.md
+// tokens: --color-accent for theme_color, --color-bg for background_color —
+// matches manifest.ts).
+export const viewport: Viewport = {
+  themeColor: "#0088b0",
 };
 
 export default function RootLayout({

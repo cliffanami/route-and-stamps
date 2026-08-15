@@ -36,10 +36,24 @@ export async function enqueue(
 
 // Distinguishes "the network is the problem, queue it" from a real error
 // (bad input, RLS rejection) that should surface normally rather than be
-// silently retried forever.
+// silently retried forever. A raw `fetch` rejection is a TypeError, but
+// supabase-js's PostgrestBuilder catches that and re-wraps it into a plain
+// { message, details, hint, code } object (confirmed by instrumenting a
+// real offline mutation) — the original TypeError only survives as text
+// inside `message` ("TypeError: Failed to fetch"), so `error instanceof
+// TypeError` alone never matches a real Supabase call failure.
 export function isNetworkError(error: unknown): boolean {
   if (typeof navigator !== "undefined" && !navigator.onLine) return true;
-  return error instanceof TypeError;
+  if (error instanceof TypeError) return true;
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return /fetch|network/i.test(error.message);
+  }
+  return false;
 }
 
 type Handler = (tripId: string, payload: unknown) => Promise<void>;

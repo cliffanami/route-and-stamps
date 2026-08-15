@@ -11,6 +11,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated at build time by next.config.ts's withSerwistInit — not source.
+    "public/sw.js",
+    "public/sw.js.map",
+    "public/swe-worker*.js",
+    "public/swe-worker*.js.map",
   ]),
 ]);
 
