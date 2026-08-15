@@ -41,6 +41,48 @@ export function useAddPackingItem(tripId: string) {
   });
 }
 
+// Editing name/category/scope/is_document — separate from
+// useTogglePackingItem, which owns the checkbox's is_checked toggle.
+export function useUpdatePackingItem(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...input
+    }: PackingItemInput & { id: string }) => {
+      const parsed = packingItemSchema.parse(input);
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("packing_items")
+        .update(parsed)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["packing_items", tripId] });
+    },
+  });
+}
+
+export function useDeletePackingItem(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("packing_items")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["packing_items", tripId] });
+    },
+  });
+}
+
 export function useTogglePackingItem(tripId: string) {
   const queryClient = useQueryClient();
 

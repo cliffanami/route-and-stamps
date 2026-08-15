@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { useAddBudgetLine } from "@/lib/queries/use-budget-lines";
+import { useAddBudgetLine, useUpdateBudgetLine } from "@/lib/queries/use-budget-lines";
+import { minorToDecimalString } from "@/lib/money/currency";
+import type { BudgetLine } from "@/types/database.types";
 
 interface BudgetFormProps {
   tripId: string;
   onDone: () => void;
   existingCategories: string[];
+  line?: BudgetLine;
 }
 
 // Suggested categories from schema.sql's column comment, plus whatever's
@@ -24,18 +27,26 @@ const SUGGESTED_CATEGORIES = [
   "other",
 ];
 
+// Doubles as the edit form — pass an existing `line` to prefill and update
+// it instead of logging a new cost. Booking status stays owned by
+// CostLineRow's tap-to-cycle tag, not editable here.
 export function BudgetForm({
   tripId,
   onDone,
   existingCategories,
+  line,
 }: BudgetFormProps) {
   const addLine = useAddBudgetLine(tripId);
+  const updateLine = useUpdateBudgetLine(tripId);
   const { showToast } = useToast();
+  const isEditing = line !== undefined;
 
-  const [category, setCategory] = useState("");
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("");
+  const [category, setCategory] = useState(line?.category ?? "");
+  const [description, setDescription] = useState(line?.description ?? "");
+  const [amount, setAmount] = useState(
+    line ? minorToDecimalString(line.amount_minor, line.currency) : "",
+  );
+  const [currency, setCurrency] = useState(line?.currency ?? "");
   const [error, setError] = useState<string | null>(null);
 
   const categoryOptions = Array.from(
@@ -47,22 +58,35 @@ export function BudgetForm({
     setError(null);
 
     try {
-      await addLine.mutateAsync({
-        category,
-        description,
-        amount,
-        currency,
-        status: "not_booked",
-        paid_by: null,
-        payment_details: null,
-        due_date: null,
-      });
-      showToast("Cost logged");
+      if (isEditing) {
+        await updateLine.mutateAsync({
+          id: line.id,
+          category,
+          description,
+          amount,
+          currency,
+        });
+        showToast("Cost updated");
+      } else {
+        await addLine.mutateAsync({
+          category,
+          description,
+          amount,
+          currency,
+          status: "not_booked",
+          paid_by: null,
+          payment_details: null,
+          due_date: null,
+        });
+        showToast("Cost logged");
+      }
       onDone();
     } catch {
       setError("Couldn't save that cost — try again.");
     }
   }
+
+  const pending = isEditing ? updateLine.isPending : addLine.isPending;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -129,8 +153,8 @@ export function BudgetForm({
 
       {error && <p className="text-muted">{error}</p>}
 
-      <Button type="submit" variant="primary" disabled={addLine.isPending}>
-        {addLine.isPending ? "Saving…" : "Save cost"}
+      <Button type="submit" variant="primary" disabled={pending}>
+        {pending ? "Saving…" : isEditing ? "Save changes" : "Save cost"}
       </Button>
     </form>
   );

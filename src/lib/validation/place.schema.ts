@@ -16,3 +16,12 @@ export const placeSchema = z.object({
 });
 
 export type PlaceInput = z.infer<typeof placeSchema>;
+
+// Editing a place (name/location/nearest-stop/note) is a separate mutation
+// from source_url — that field stays owned by useAttachPlaceEmbed, which
+// also fetches/clears the cached oEmbed HTML alongside it; updating it
+// through this schema too would let source_url and embed_html drift out
+// of sync with each other.
+export const updatePlaceSchema = placeSchema.omit({ source_url: true });
+
+export type UpdatePlaceInput = z.infer<typeof updatePlaceSchema>;

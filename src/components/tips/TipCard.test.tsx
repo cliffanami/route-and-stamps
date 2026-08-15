@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TipCard } from "./TipCard";
@@ -20,9 +20,11 @@ function makeTip(overrides: Partial<Tip>): Tip {
   };
 }
 
+const noop = () => {};
+
 describe("TipCard", () => {
   it("shows the category and text content for a text tip", () => {
-    render(<TipCard tip={makeTip({})} />);
+    render(<TipCard tip={makeTip({})} onEdit={noop} />);
     expect(screen.getByText("Food")).toBeInTheDocument();
     expect(
       screen.getByText("Try the ramen near the station."),
@@ -38,6 +40,7 @@ describe("TipCard", () => {
           content_text: null,
           source_url: "https://www.tiktok.com/@user/video/123",
         })}
+        onEdit={noop}
       />,
     );
     expect(screen.getByText("Video")).toBeInTheDocument();
@@ -51,6 +54,7 @@ describe("TipCard", () => {
           content_text: null,
           source_url: "https://www.instagram.com/reel/abc123/",
         })}
+        onEdit={noop}
       />,
     );
     const link = screen.getByRole("link", { name: /View on Instagram/ });
@@ -70,6 +74,7 @@ describe("TipCard", () => {
           source_url: "https://www.tiktok.com/@user/video/123",
           embed_html: "<blockquote class='tiktok-embed'>post</blockquote>",
         })}
+        onEdit={noop}
       />,
     );
 
@@ -88,8 +93,19 @@ describe("TipCard", () => {
       <TipCard
         tip={makeTip({ related_place_id: "place-1" })}
         relatedPlaceName="Fushimi Inari Shrine"
+        onEdit={noop}
       />,
     );
     expect(screen.getByText("Near Fushimi Inari Shrine")).toBeInTheDocument();
+  });
+
+  it("calls onEdit when the edit button is clicked", async () => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+    render(<TipCard tip={makeTip({})} onEdit={onEdit} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit tip" }));
+
+    expect(onEdit).toHaveBeenCalledOnce();
   });
 });

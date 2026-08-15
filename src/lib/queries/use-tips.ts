@@ -60,3 +60,54 @@ export function useAddTip(tripId: string) {
     },
   });
 }
+
+// Same oEmbed-refresh behavior as useAddTip — editing a video tip's link
+// re-fetches the embed rather than leaving a stale one from the old URL.
+export function useUpdateTip(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      tipId,
+      ...input
+    }: Omit<TipInput, "embed_html"> & { tipId: string }) => {
+      let embedHtml: string | null = null;
+
+      if (input.format === "video" && input.source_url) {
+        const res = await fetch(
+          `/api/embed?url=${encodeURIComponent(input.source_url)}`,
+        );
+        if (res.ok) {
+          embedHtml = ((await res.json()) as { html: string }).html;
+        }
+      }
+
+      const parsed = tipSchema.parse({ ...input, embed_html: embedHtml });
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("tips")
+        .update(parsed)
+        .eq("id", tipId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tips", tripId] });
+    },
+  });
+}
+
+export function useDeleteTip(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (tipId: string) => {
+      const supabase = createClient();
+      const { error } = await supabase.from("tips").delete().eq("id", tipId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tips", tripId] });
+    },
+  });
+}

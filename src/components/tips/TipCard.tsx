@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PencilSimple } from "@phosphor-icons/react";
 import { Card, CardBody, CardMeta } from "@/components/ui/Card";
 import { Tag } from "@/components/ui/Tag";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +15,7 @@ import type { Tip } from "@/types/database.types";
 interface TipCardProps {
   tip: Tip;
   relatedPlaceName?: string;
+  onEdit: () => void;
 }
 
 // tips has no provider column — inferred from the hostname, same as places'
@@ -32,17 +34,28 @@ function inferProvider(sourceUrl: string | null): EmbedProvider | null {
   return null;
 }
 
-export function TipCard({ tip, relatedPlaceName }: TipCardProps) {
+export function TipCard({ tip, relatedPlaceName, onEdit }: TipCardProps) {
   const [expanded, setExpanded] = useState(false);
   const provider = inferProvider(tip.source_url);
   const hasRenderableEmbed = tip.embed_html !== null && provider !== null;
 
   return (
     <Card>
-      <CardMeta>
-        <Tag variant="accent">{tip.category}</Tag>
-        {tip.format === "video" && <Tag variant="outline">Video</Tag>}
-      </CardMeta>
+      <div className="flex items-start justify-between gap-2">
+        <CardMeta>
+          <Tag variant="accent">{tip.category}</Tag>
+          {tip.format === "video" && <Tag variant="outline">Video</Tag>}
+        </CardMeta>
+        <Button
+          type="button"
+          variant="ghost"
+          icon
+          onClick={onEdit}
+          aria-label="Edit tip"
+        >
+          <PencilSimple weight="duotone" size={20} />
+        </Button>
+      </div>
 
       {tip.format === "text" ? (
         <CardBody>{tip.content_text}</CardBody>

@@ -1,14 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
-import { useTips } from "@/lib/queries/use-tips";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
+import { useTips, useDeleteTip } from "@/lib/queries/use-tips";
 import { usePlaces } from "@/lib/queries/use-places";
 import { useRealtimeSubscription } from "@/lib/queries/use-realtime-subscription";
 import { CategoryFilter } from "./CategoryFilter";
 import { TipCard } from "./TipCard";
 import { TipForm } from "./TipForm";
+import type { Tip } from "@/types/database.types";
 
 interface TipsViewProps {
   tripId: string;
@@ -17,10 +20,14 @@ interface TipsViewProps {
 export function TipsView({ tripId }: TipsViewProps) {
   const { data: tips = [], isLoading, error } = useTips(tripId);
   const { data: places = [] } = usePlaces(tripId);
+  const deleteTip = useDeleteTip(tripId);
   useRealtimeSubscription("tips", tripId);
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+  const [addingTip, setAddingTip] = useState(false);
+  const [editingTip, setEditingTip] = useState<Tip | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const categories = useMemo(
     () => Array.from(new Set(tips.map((tip) => tip.category))).sort(),
@@ -34,6 +41,26 @@ export function TipsView({ tripId }: TipsViewProps) {
     [places],
   );
 
+  const dialogOpen = addingTip || editingTip !== null;
+  function closeDialog() {
+    setAddingTip(false);
+    setEditingTip(null);
+  }
+
+  async function handleDelete() {
+    if (!editingTip) return;
+    setDeleteError(null);
+    try {
+      await deleteTip.mutateAsync(editingTip.id);
+      setConfirmingDelete(false);
+      closeDialog();
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Couldn't delete that tip — try again.",
+      );
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <div className="flex items-center justify-between gap-2">
@@ -41,7 +68,7 @@ export function TipsView({ tripId }: TipsViewProps) {
         <Button
           type="button"
           variant="primary"
-          onClick={() => setFormOpen(true)}
+          onClick={() => setAddingTip(true)}
         >
           Add a tip
         </Button>
@@ -75,21 +102,45 @@ export function TipsView({ tripId }: TipsViewProps) {
                 ? placeNameById.get(tip.related_place_id)
                 : undefined
             }
+            onEdit={() => setEditingTip(tip)}
           />
         ))}
       </div>
 
       <Dialog
-        open={formOpen}
-        onClose={() => setFormOpen(false)}
-        title="Add a tip"
+        open={dialogOpen}
+        onClose={closeDialog}
+        title={editingTip ? "Edit tip" : "Add a tip"}
       >
-        <TipForm
-          tripId={tripId}
-          existingCategories={categories}
-          onDone={() => setFormOpen(false)}
-        />
+        <div className="flex flex-col gap-4">
+          <TipForm
+            tripId={tripId}
+            existingCategories={categories}
+            tip={editingTip ?? undefined}
+            onDone={closeDialog}
+          />
+          {editingTip && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmingDelete(true)}
+            >
+              <Trash weight="duotone" size={20} />
+              Delete tip
+            </Button>
+          )}
+        </div>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={confirmingDelete}
+        onClose={() => setConfirmingDelete(false)}
+        onConfirm={handleDelete}
+        title="Delete this tip?"
+        description="This can't be undone."
+        pending={deleteTip.isPending}
+        error={deleteError}
+      />
     </div>
   );
 }

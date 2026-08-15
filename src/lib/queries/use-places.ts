@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { placeSchema, type PlaceInput } from "@/lib/validation/place.schema";
+import {
+  placeSchema,
+  updatePlaceSchema,
+  type PlaceInput,
+  type UpdatePlaceInput,
+} from "@/lib/validation/place.schema";
 import { placeMediaSchema } from "@/lib/validation/place-media.schema";
 import { withSnapshotFallback } from "@/lib/offline/cache";
 import { enqueue, isNetworkError } from "@/lib/offline/sync-queue";
@@ -98,6 +103,52 @@ export function useAddPlace(tripId: string) {
     onSuccess: (result) => {
       if (result)
         queryClient.invalidateQueries({ queryKey: ["places", tripId] });
+    },
+  });
+}
+
+// Editing the core fields (name/location/nearest-stop/note) — everything
+// the Add-a-Place form itself collects except the link, which stays
+// useAttachPlaceEmbed's job (see updatePlaceSchema's comment).
+export function useUpdatePlace(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      placeId,
+      ...input
+    }: UpdatePlaceInput & { placeId: string }) => {
+      const parsed = updatePlaceSchema.parse(input);
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("places")
+        .update(parsed)
+        .eq("id", placeId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["places", tripId] });
+    },
+  });
+}
+
+// votes.place_id cascades on delete (schema.sql), so a place's votes clean
+// up automatically. Its Storage photo object (if any) doesn't — cascading
+// that too would mean a second round-trip to Storage on every delete for
+// what's a rare action on a private per-place path; an orphaned object
+// costs a little space, not correctness, so it's left as a known gap
+// rather than added complexity here.
+export function useDeletePlace(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (placeId: string) => {
+      const supabase = createClient();
+      const { error } = await supabase.from("places").delete().eq("id", placeId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["places", tripId] });
     },
   });
 }

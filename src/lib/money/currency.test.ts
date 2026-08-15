@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { minorUnitExponent, formatMinor, toMinorUnits } from "./currency";
+import {
+  minorUnitExponent,
+  formatMinor,
+  toMinorUnits,
+  minorToDecimalString,
+} from "./currency";
 
 describe("minorUnitExponent", () => {
   it("is 0 for JPY (no decimal places)", () => {
@@ -47,5 +52,21 @@ describe("toMinorUnits", () => {
       .format(originalMinor / 100)
       .replace(/[^0-9.]/g, "");
     expect(toMinorUnits(formatted, "KES")).toBe(originalMinor);
+  });
+});
+
+describe("minorToDecimalString", () => {
+  it("does not treat JPY minor units as cents", () => {
+    expect(minorToDecimalString(4500, "JPY")).toBe("4500");
+  });
+
+  it("formats KES with two decimal places", () => {
+    expect(minorToDecimalString(123456, "KES")).toBe("1234.56");
+  });
+
+  it("round-trips through toMinorUnits without drift", () => {
+    expect(toMinorUnits(minorToDecimalString(987654, "KES"), "KES")).toBe(
+      987654,
+    );
   });
 });

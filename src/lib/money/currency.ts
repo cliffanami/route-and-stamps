@@ -44,3 +44,15 @@ export function toMinorUnits(
   const parsed = Number.parseFloat(majorAmountInput);
   return Math.round(parsed * 10 ** exponent);
 }
+
+// The inverse of toMinorUnits — prefills an editable amount field from a
+// stored value (e.g. BudgetForm's edit mode). Deliberately a plain decimal
+// string, not formatMinor's currency-symbol display string, since this
+// feeds back into the same input toMinorUnits will parse on save.
+export function minorToDecimalString(
+  amountMinor: number,
+  currency: string,
+): string {
+  const exponent = minorUnitExponent(currency);
+  return (amountMinor / 10 ** exponent).toFixed(exponent);
+}

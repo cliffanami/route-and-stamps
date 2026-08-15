@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { PencilSimple } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
+import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { MediaSlider } from "./MediaSlider";
 import { PhotoUpload } from "./PhotoUpload";
 import { EmbedLinkInput } from "./EmbedLinkInput";
+import { EditPlaceDetailsForm } from "./EditPlaceDetailsForm";
 import { LocationMapLoader } from "@/components/map/LocationMapLoader";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
-import { usePlace } from "@/lib/queries/use-places";
+import { usePlace, useDeletePlace } from "@/lib/queries/use-places";
 
 interface PlaceDetailProps {
   tripId: string;
@@ -33,26 +36,56 @@ function inferProvider(
 }
 
 // View and edit are deliberately distinct screens, not the same layout with
-// inputs left visible — view is read-only display, edit is only the two
-// media controls. Toggled locally rather than a separate route: there's
-// nothing else edit needs (no unsaved-draft state to protect on navigation).
+// inputs left visible — view is read-only display, edit gathers every
+// editable field: name/location/nearest-stop/note (EditPlaceDetailsForm),
+// the link (EmbedLinkInput — kept separate from the details form since it
+// also drives the cached oEmbed fetch, not just a plain field update), and
+// the photo. Toggled locally rather than a separate route: there's nothing
+// else edit needs (no unsaved-draft state to protect on navigation).
 export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const { data: place, isLoading } = usePlace(tripId, placeId);
+  const deletePlace = useDeletePlace(tripId);
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   if (isLoading) return <p className="px-6 py-4 text-muted">Loading…</p>;
   if (!place) return <p className="px-6 py-4 text-muted">Place not found.</p>;
 
+  async function handleDelete() {
+    setDeleteError(null);
+    try {
+      await deletePlace.mutateAsync(placeId);
+      router.push(`/trips/${tripId}/route`);
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Couldn't delete that place — try again.",
+      );
+    }
+  }
+
   if (editing) {
     return (
-      <div className="flex flex-col gap-4 p-6">
-        <h1>Edit media</h1>
-        <PhotoUpload tripId={tripId} placeId={placeId} />
-        <EmbedLinkInput
+      <div className="flex flex-col gap-6 p-6">
+        <h1>Edit place</h1>
+
+        <EditPlaceDetailsForm
           tripId={tripId}
-          placeId={placeId}
-          initialUrl={place.source_url}
+          place={place}
+          onDone={() => setEditing(false)}
         />
+
+        <div className="flex flex-col gap-2">
+          <h2>Media</h2>
+          <PhotoUpload tripId={tripId} placeId={placeId} />
+          <EmbedLinkInput
+            tripId={tripId}
+            placeId={placeId}
+            initialUrl={place.source_url}
+          />
+        </div>
+
         <Button
           type="button"
           variant="secondary"
@@ -60,6 +93,25 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
         >
           Done
         </Button>
+
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setConfirmingDelete(true)}
+        >
+          <Trash weight="duotone" size={20} />
+          Delete place
+        </Button>
+
+        <DeleteConfirmDialog
+          open={confirmingDelete}
+          onClose={() => setConfirmingDelete(false)}
+          onConfirm={handleDelete}
+          title="Delete this place?"
+          description={`"${place.name}" and everyone's votes on it will be removed. This can't be undone.`}
+          pending={deletePlace.isPending}
+          error={deleteError}
+        />
       </div>
     );
   }
@@ -73,7 +125,7 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
           variant="ghost"
           icon
           onClick={() => setEditing(true)}
-          aria-label="Edit media"
+          aria-label="Edit place"
         >
           <PencilSimple weight="duotone" size={20} />
         </Button>

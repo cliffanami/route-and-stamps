@@ -94,6 +94,70 @@ export function useAddBudgetLine(tripId: string) {
   });
 }
 
+const editableFieldsSchema = budgetLineSchema.pick({
+  category: true,
+  description: true,
+  amount_minor: true,
+  currency: true,
+});
+
+// Editing the loggable fields (category/description/amount/currency) —
+// separate from useUpdateBudgetLineStatus, which owns the tap-to-cycle
+// booking status. A partial Supabase update only touches the columns
+// given, so status/paid_by/payment_details/due_date are left alone
+// without needing to fetch and re-send them first.
+export function useUpdateBudgetLine(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      category,
+      description,
+      amount,
+      currency,
+    }: {
+      id: string;
+      category: string;
+      description: string;
+      amount: string;
+      currency: string;
+    }) => {
+      const parsed = editableFieldsSchema.parse({
+        category,
+        description,
+        amount_minor: toMinorUnits(amount, currency),
+        currency,
+      });
+
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("budget_lines")
+        .update(parsed)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budget_lines", tripId] });
+    },
+  });
+}
+
+export function useDeleteBudgetLine(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient();
+      const { error } = await supabase.from("budget_lines").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budget_lines", tripId] });
+    },
+  });
+}
+
 export const STATUS_CYCLE: Record<BudgetStatus, BudgetStatus> = {
   not_booked: "pending",
   pending: "paid",
