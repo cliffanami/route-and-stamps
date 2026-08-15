@@ -8,7 +8,19 @@ import { createClient } from "@/lib/supabase/client";
 // key on any change rather than patching the cache directly — simpler to
 // reason about, and correct-by-construction since it re-fetches from the
 // same RLS-secured source (CONVENTIONS.md §2).
-export function useRealtimeSubscription(table: "places" | "votes", tripId: string) {
+// Tables with a direct trip_id column get filtered server-side; others
+// (e.g. votes, keyed by place_id) invalidate on every event for the table.
+const TRIP_SCOPED_TABLES = new Set([
+  "places",
+  "tips",
+  "budget_lines",
+  "packing_items",
+]);
+
+export function useRealtimeSubscription(
+  table: "places" | "votes" | "tips" | "budget_lines" | "packing_items",
+  tripId: string,
+) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -34,7 +46,9 @@ export function useRealtimeSubscription(table: "places" | "votes", tripId: strin
             event: "*",
             schema: "public",
             table,
-            ...(table === "places" ? { filter: `trip_id=eq.${tripId}` } : {}),
+            ...(TRIP_SCOPED_TABLES.has(table)
+              ? { filter: `trip_id=eq.${tripId}` }
+              : {}),
           },
           () => {
             queryClient.invalidateQueries({ queryKey: [table, tripId] });
