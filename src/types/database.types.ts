@@ -9,6 +9,8 @@ export type BookingStatus = "not_booked" | "booked" | "confirmed";
 export type TipFormat = "text" | "video";
 export type BudgetMode = "cap" | "tally";
 export type BudgetStatus = "not_booked" | "pending" | "paid";
+export type NotificationType =
+  "consensus_reached" | "place_added" | "tip_added" | "vote_cast";
 
 export interface Stop {
   id: string;
@@ -112,5 +114,21 @@ export interface PackingItem {
   category: string | null;
   is_document: boolean;
   is_checked: boolean;
+  created_at: string;
+}
+
+export interface Notification {
+  id: string;
+  trip_id: string;
+  recipient_id: string;
+  type: NotificationType;
+  // Every field the trigger functions embed (0005_notifications.sql) is
+  // text/uuid-as-string — place_id/place_name/tip_id/category/
+  // added_by_name — not typed per-variant since it's read straight from a
+  // jsonb column with no schema enforcement beyond what the triggers write.
+  payload: Record<string, string>;
+  is_instant: boolean;
+  read_at: string | null;
+  digested_at: string | null;
   created_at: string;
 }
