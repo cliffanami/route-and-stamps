@@ -140,35 +140,55 @@ function InviteSection({ tripId }: { tripId: string }) {
   );
 }
 
+type Tab = "members" | "invite";
+
 export function MembersView({ tripId }: MembersViewProps) {
   const { data: members = [], isLoading } = useTripMembers(tripId);
+  const [tab, setTab] = useState<Tab>("members");
 
   return (
     <div className="flex flex-col gap-4 p-6">
       <h1>Trip Members</h1>
 
-      <InviteSection tripId={tripId} />
-
-      <div className="flex flex-col gap-3">
-        {isLoading && <p className="text-muted">Loading…</p>}
-        {members.map((member) => (
-          <Card key={member.user_id}>
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle>{member.displayName}</CardTitle>
-              <Tag variant={member.role === "owner" ? "accent" : "neutral"}>
-                {member.role}
-              </Tag>
-            </div>
-            <CardMeta>
-              Joined {new Date(member.joined_at).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </CardMeta>
-          </Card>
+      <div className="seg" role="radiogroup" aria-label="View">
+        {(["members", "invite"] as const).map((value) => (
+          <label key={value} className="seg-opt">
+            <input
+              type="radio"
+              name="members-tab"
+              value={value}
+              checked={tab === value}
+              onChange={() => setTab(value)}
+            />
+            {value === "members" ? "Members" : "Invite"}
+          </label>
         ))}
       </div>
+
+      {tab === "invite" ? (
+        <InviteSection tripId={tripId} />
+      ) : (
+        <div className="flex flex-col gap-3">
+          {isLoading && <p className="text-muted">Loading…</p>}
+          {members.map((member) => (
+            <Card key={member.user_id}>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle>{member.displayName}</CardTitle>
+                <Tag variant={member.role === "owner" ? "accent" : "neutral"}>
+                  {member.role}
+                </Tag>
+              </div>
+              <CardMeta>
+                Joined {new Date(member.joined_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </CardMeta>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

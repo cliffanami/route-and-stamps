@@ -12,6 +12,11 @@ interface BudgetFormProps {
   onDone: () => void;
   existingCategories: string[];
   line?: BudgetLine;
+  // Pre-fills a new cost (distinct from `line`, which signals full-edit
+  // mode) — used by PlaceDetail's "Add a cost" button (ROADMAP.md
+  // Milestone B) to link the new line to that place without the user
+  // having to pick it.
+  initialValues?: { place_id: string; description: string };
 }
 
 // Suggested categories from schema.sql's column comment, plus whatever's
@@ -35,6 +40,7 @@ export function BudgetForm({
   onDone,
   existingCategories,
   line,
+  initialValues,
 }: BudgetFormProps) {
   const addLine = useAddBudgetLine(tripId);
   const updateLine = useUpdateBudgetLine(tripId);
@@ -42,7 +48,9 @@ export function BudgetForm({
   const isEditing = line !== undefined;
 
   const [category, setCategory] = useState(line?.category ?? "");
-  const [description, setDescription] = useState(line?.description ?? "");
+  const [description, setDescription] = useState(
+    line?.description ?? initialValues?.description ?? "",
+  );
   const [amount, setAmount] = useState(
     line ? minorToDecimalString(line.amount_minor, line.currency) : "",
   );
@@ -77,6 +85,7 @@ export function BudgetForm({
           paid_by: null,
           payment_details: null,
           due_date: null,
+          place_id: initialValues?.place_id ?? null,
         });
         showToast("Cost logged");
       }

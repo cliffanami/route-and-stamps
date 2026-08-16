@@ -18,6 +18,8 @@ export const budgetLineSchema = z.object({
   paid_by: z.string().uuid().nullable(),
   payment_details: z.string().trim().max(500).nullable(),
   due_date: z.string().nullable(),
+  // Optional link to the place this cost is for (ROADMAP.md Milestone B).
+  place_id: z.string().uuid().nullable(),
 });
 
 export type BudgetLineInput = z.infer<typeof budgetLineSchema>;

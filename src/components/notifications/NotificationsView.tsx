@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, HandHeart, MapPinPlus, Lightbulb } from "@phosphor-icons/react";
+import {
+  Bell,
+  HandHeart,
+  MapPinPlus,
+  Lightbulb,
+  Clock,
+  SuitcaseRolling,
+  UserPlus,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardMeta } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/client";
@@ -46,6 +54,24 @@ const NOTIFICATION_META: Record<
     icon: Bell,
     message: () => "New vote activity",
     href: (tripId) => `/trips/${tripId}/route`,
+  },
+  arrival_estimated: {
+    icon: Clock,
+    message: (p) => `Probably arriving in ${p.stop_name} around now`,
+    href: (tripId) => `/trips/${tripId}/route`,
+  },
+  packing_due: {
+    icon: SuitcaseRolling,
+    message: (p) => `Packing reminder: ${p.item_name}`,
+    href: (tripId) => `/trips/${tripId}/packing`,
+  },
+  trip_joined: {
+    icon: UserPlus,
+    message: (p) =>
+      p.joiner_name
+        ? `${p.joiner_name} joined the trip`
+        : `You joined ${p.trip_name}`,
+    href: (tripId) => `/trips/${tripId}/members`,
   },
 };
 

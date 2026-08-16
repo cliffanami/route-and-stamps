@@ -13,6 +13,7 @@ function makeLine(
     paid_by: null,
     payment_details: null,
     due_date: null,
+    place_id: null,
     ...overrides,
   };
 }

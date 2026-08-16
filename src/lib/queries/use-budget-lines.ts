@@ -34,6 +34,7 @@ interface AddBudgetLineInput {
   paid_by: string | null;
   payment_details: string | null;
   due_date: string | null;
+  place_id: string | null;
 }
 
 // Factored out so both the mutation below and the offline drain handler
@@ -73,6 +74,7 @@ export function useAddBudgetLine(tripId: string) {
         paid_by: input.paid_by,
         payment_details: input.payment_details,
         due_date: input.due_date,
+        place_id: input.place_id,
       });
 
       try {

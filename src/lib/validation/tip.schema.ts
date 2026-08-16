@@ -13,6 +13,10 @@ export const tipSchema = z
     source_url: z.string().trim().url("Must be a valid URL").nullable(),
     embed_html: z.string().nullable(),
     related_place_id: z.string().uuid().nullable(),
+    // Independent of related_place_id (ROADMAP.md Milestone B) — either,
+    // both, or neither can be set. A tip doesn't have to be tied to
+    // anything, and town-level advice isn't always about one specific place.
+    related_stop_id: z.string().uuid().nullable(),
   })
   .refine((tip) => tip.format !== "text" || !!tip.content_text, {
     message: "Text tips need content",

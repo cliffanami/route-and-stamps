@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PlusCircle } from "@phosphor-icons/react";
-import { createClient } from "@/lib/supabase/client";
 import { useStops } from "@/lib/queries/use-stops";
 import { usePlaces } from "@/lib/queries/use-places";
 import { useVotes } from "@/lib/queries/use-votes";
 import { useTripMembers } from "@/lib/queries/use-trip-members";
+import { useCurrentUserId } from "@/lib/queries/use-current-user";
 import { useRealtimeSubscription } from "@/lib/queries/use-realtime-subscription";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -30,18 +30,11 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
   useRealtimeSubscription("places", tripId);
   useRealtimeSubscription("votes", tripId);
 
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = useCurrentUserId();
   // Skip is filterable, not removed (ROADMAP.md M1) — defaults to hidden
   // so the route reads clean, but nothing is ever deleted by skipping.
   const [hideSkipped, setHideSkipped] = useState(true);
   const [addingStop, setAddingStop] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth
-      .getUser()
-      .then(({ data }) => setUserId(data.user?.id ?? null));
-  }, []);
 
   const memberIds = members.map((m) => m.user_id);
 

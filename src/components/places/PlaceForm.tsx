@@ -45,9 +45,14 @@ interface Located {
 
 interface PlaceFormProps {
   tripId: string;
+  // Web Share Target lands here (ROADMAP.md Milestone B) — pre-fills the
+  // link field only, same as a manual paste. No oEmbed fetch triggered;
+  // that only ever happens later via the separate edit-mode EmbedLinkInput
+  // flow, matching this form's existing behavior for a typed-in link.
+  initialSourceUrl?: string;
 }
 
-export function PlaceForm({ tripId }: PlaceFormProps) {
+export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
   const { data: stops = [] } = useStops(tripId);
   const addPlace = useAddPlace(tripId);
   const {
@@ -55,7 +60,10 @@ export function PlaceForm({ tripId }: PlaceFormProps) {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<DetailsValues>({ resolver: zodResolver(detailsSchema) });
+  } = useForm<DetailsValues>({
+    resolver: zodResolver(detailsSchema),
+    defaultValues: { source_url: initialSourceUrl ?? "" },
+  });
 
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);

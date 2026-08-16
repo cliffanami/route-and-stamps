@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, BellRinging } from "@phosphor-icons/react";
-import { createClient } from "@/lib/supabase/client";
 import { useNotifications } from "@/lib/queries/use-notifications";
+import { useCurrentUserId } from "@/lib/queries/use-current-user";
 
 interface NotificationBellProps {
   tripId: string;
@@ -15,15 +14,7 @@ interface NotificationBellProps {
 // plain ink (currentColor, no explicit accent), so there's no cyan
 // alongside it in this small component.
 export function NotificationBell({ tripId }: NotificationBellProps) {
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth
-      .getUser()
-      .then(({ data }) => setUserId(data.user?.id ?? null));
-  }, []);
-
+  const userId = useCurrentUserId();
   const { data: notifications = [] } = useNotifications(tripId, userId);
   const unreadCount = notifications.filter((n) => n.read_at === null).length;
 

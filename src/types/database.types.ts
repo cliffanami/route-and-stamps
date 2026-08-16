@@ -10,7 +10,8 @@ export type TipFormat = "text" | "video";
 export type BudgetMode = "cap" | "tally";
 export type BudgetStatus = "not_booked" | "pending" | "paid";
 export type NotificationType =
-  "consensus_reached" | "place_added" | "tip_added" | "vote_cast";
+  "consensus_reached" | "place_added" | "tip_added" | "vote_cast" |
+  "arrival_estimated" | "packing_due" | "trip_joined";
 export type TripRole = "owner" | "member";
 
 export interface Stop {
@@ -90,6 +91,7 @@ export interface Tip {
   source_url: string | null;
   embed_html: string | null;
   related_place_id: string | null;
+  related_stop_id: string | null;
   added_by: string;
   created_at: string;
 }
@@ -105,6 +107,7 @@ export interface BudgetLine {
   paid_by: string | null;
   payment_details: string | null;
   due_date: string | null;
+  place_id: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;

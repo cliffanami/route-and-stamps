@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useAddTip, useUpdateTip } from "@/lib/queries/use-tips";
 import { usePlaces } from "@/lib/queries/use-places";
+import { useStops } from "@/lib/queries/use-stops";
 import type { Tip, TipFormat } from "@/types/database.types";
 
 interface TipFormProps {
@@ -27,6 +28,7 @@ export function TipForm({
   const addTip = useAddTip(tripId);
   const updateTip = useUpdateTip(tripId);
   const { data: places = [] } = usePlaces(tripId);
+  const { data: stops = [] } = useStops(tripId);
   const { showToast } = useToast();
   const isEditing = tip !== undefined;
 
@@ -36,6 +38,9 @@ export function TipForm({
   const [sourceUrl, setSourceUrl] = useState(tip?.source_url ?? "");
   const [relatedPlaceId, setRelatedPlaceId] = useState(
     tip?.related_place_id ?? "",
+  );
+  const [relatedStopId, setRelatedStopId] = useState(
+    tip?.related_stop_id ?? "",
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +54,7 @@ export function TipForm({
       content_text: format === "text" ? contentText.trim() || null : null,
       source_url: format === "video" ? sourceUrl.trim() || null : null,
       related_place_id: relatedPlaceId || null,
+      related_stop_id: relatedStopId || null,
     };
 
     try {
@@ -137,6 +143,25 @@ export function TipForm({
             {places.map((place) => (
               <option key={place.id} value={place.id}>
                 {place.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {stops.length > 0 && (
+        <div className="field">
+          <label htmlFor="tip-stop">Link to a stop (optional)</label>
+          <select
+            id="tip-stop"
+            className="input"
+            value={relatedStopId}
+            onChange={(event) => setRelatedStopId(event.target.value)}
+          >
+            <option value="">— None —</option>
+            {stops.map((stop) => (
+              <option key={stop.id} value={stop.id}>
+                {stop.name}
               </option>
             ))}
           </select>

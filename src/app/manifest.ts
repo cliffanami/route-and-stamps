@@ -13,6 +13,19 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     background_color: "#f3f2f2",
     theme_color: "#0088b0",
+    // Android only (ROADMAP.md Milestone B) — receiving a share has no iOS
+    // implementation on any browser there (same WebKit engine under
+    // Apple's requirement), so this is a manifest key iOS silently
+    // ignores, not a runtime capability to detect and branch on.
+    share_target: {
+      action: "/share-target",
+      method: "GET",
+      params: {
+        title: "shared_title",
+        text: "shared_text",
+        url: "shared_url",
+      },
+    },
     icons: [
       {
         src: "/icons/icon-192.png",

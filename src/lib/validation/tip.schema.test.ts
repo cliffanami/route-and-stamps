@@ -9,6 +9,7 @@ function makeTip(overrides: Partial<Parameters<typeof tipSchema.parse>[0]>) {
     source_url: null,
     embed_html: null,
     related_place_id: null,
+    related_stop_id: null,
     ...overrides,
   };
 }

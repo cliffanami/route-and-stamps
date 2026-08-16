@@ -14,6 +14,7 @@ function makeTip(overrides: Partial<Tip>): Tip {
     source_url: null,
     embed_html: null,
     related_place_id: null,
+    related_stop_id: null,
     added_by: "user-1",
     created_at: new Date().toISOString(),
     ...overrides,
