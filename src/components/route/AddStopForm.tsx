@@ -26,7 +26,8 @@ async function geocode(query: string): Promise<GeocodeResult | null> {
 }
 
 const detailsSchema = z.object({
-  date_label: z.string().trim().max(100).optional().or(z.literal("")),
+  start_date: z.string().optional().or(z.literal("")),
+  end_date: z.string().optional().or(z.literal("")),
 });
 
 type DetailsValues = z.infer<typeof detailsSchema>;
@@ -109,7 +110,8 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
     try {
       await addStop.mutateAsync({
         name,
-        date_label: values.date_label || null,
+        start_date: values.start_date || null,
+        end_date: values.end_date || null,
         lat: located.lat,
         lng: located.lng,
         town: located.town,
@@ -154,12 +156,22 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
       {located?.town && <p className="text-muted">Located in {located.town}</p>}
 
       <div className="field">
-        <label htmlFor="stop-date-label">Date (optional)</label>
+        <label htmlFor="stop-start-date">Start date (optional)</label>
         <input
-          id="stop-date-label"
+          id="stop-start-date"
+          type="date"
           className="input"
-          placeholder="e.g. Aug 20–23"
-          {...register("date_label")}
+          {...register("start_date")}
+        />
+      </div>
+
+      <div className="field">
+        <label htmlFor="stop-end-date">End date (optional)</label>
+        <input
+          id="stop-end-date"
+          type="date"
+          className="input"
+          {...register("end_date")}
         />
       </div>
 

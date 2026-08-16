@@ -12,7 +12,12 @@ export const addStopSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   town: z.string().max(200).nullable(),
-  date_label: z.string().trim().max(100).nullable(),
+  // Real calendar-picker dates at creation time, not a free-text guess —
+  // date_label still exists as an optional override, editable later via
+  // StopLogisticsForm, for the rare case a clean date range can't
+  // represent what's actually planned.
+  start_date: z.string().trim().min(1).nullable(),
+  end_date: z.string().trim().min(1).nullable(),
 });
 
 export type AddStopInput = z.infer<typeof addStopSchema>;
