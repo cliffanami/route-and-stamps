@@ -11,6 +11,7 @@ export type BudgetMode = "cap" | "tally";
 export type BudgetStatus = "not_booked" | "pending" | "paid";
 export type NotificationType =
   "consensus_reached" | "place_added" | "tip_added" | "vote_cast";
+export type TripRole = "owner" | "member";
 
 export interface Stop {
   id: string;
@@ -115,6 +116,34 @@ export interface PackingItem {
   is_document: boolean;
   is_checked: boolean;
   created_at: string;
+}
+
+export interface TripMember {
+  trip_id: string;
+  user_id: string;
+  role: TripRole;
+  joined_at: string;
+}
+
+export interface TripInvite {
+  token: string;
+  trip_id: string;
+  created_by: string;
+  created_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+}
+
+export interface InvitePreview {
+  trip_id: string;
+  trip_name: string;
+  start_date: string | null;
+  end_date: string | null;
+  stop_cities: string[];
+  place_count: number;
+  tip_count: number;
+  inviter_name: string;
+  is_valid: boolean;
 }
 
 export interface Notification {

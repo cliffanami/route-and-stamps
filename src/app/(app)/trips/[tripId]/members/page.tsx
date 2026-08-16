@@ -1,8 +1,11 @@
-export default function MembersPage() {
-  return (
-    <div className="p-6">
-      <h1>Trip Members</h1>
-      <p>Invite flow coming soon.</p>
-    </div>
-  );
+import { MembersView } from "@/components/members/MembersView";
+
+export default async function MembersPage({
+  params,
+}: {
+  params: Promise<{ tripId: string }>;
+}) {
+  const { tripId } = await params;
+
+  return <MembersView tripId={tripId} />;
 }

@@ -5,6 +5,7 @@ export interface TripMember {
   user_id: string;
   role: string;
   displayName: string;
+  joined_at: string;
 }
 
 // Joins profiles via trip_members.user_id's FK (schema.sql) — readable by
@@ -19,13 +20,14 @@ export function useTripMembers(tripId: string) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("trip_members")
-        .select("user_id, role, profiles(display_name)")
+        .select("user_id, role, joined_at, profiles(display_name)")
         .eq("trip_id", tripId);
 
       if (error) throw error;
       return (data ?? []).map((row) => ({
         user_id: row.user_id,
         role: row.role,
+        joined_at: row.joined_at,
         displayName:
           (row.profiles as { display_name: string } | null)?.display_name ??
           "Trip member",
