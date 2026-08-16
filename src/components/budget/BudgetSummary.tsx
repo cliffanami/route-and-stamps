@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { formatMinor, toMinorUnits } from "@/lib/money/currency";
+import { Tag } from "@/components/ui/Tag";
 import type { BudgetLine, Trip } from "@/types/database.types";
 
 interface BudgetSummaryProps {
@@ -46,13 +47,16 @@ export function BudgetSummary({ trip, lines }: BudgetSummaryProps) {
             className="flex items-baseline justify-between gap-2"
           >
             <span>{currency}</span>
-            <span
-              style={overCap ? { color: "var(--color-accent-2)" } : undefined}
-            >
-              {formatMinor(totalMinor, currency)}
-              {capMinor !== null && (
-                <> of {formatMinor(capMinor, currency)} cap</>
-              )}
+            <span className="flex items-baseline gap-2">
+              <span
+                style={overCap ? { color: "var(--color-accent-2)" } : undefined}
+              >
+                {formatMinor(totalMinor, currency)}
+                {capMinor !== null && (
+                  <> of {formatMinor(capMinor, currency)} cap</>
+                )}
+              </span>
+              {overCap && <Tag variant="accent-2">Over cap</Tag>}
             </span>
           </div>
         );
