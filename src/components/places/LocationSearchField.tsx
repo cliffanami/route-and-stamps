@@ -20,11 +20,12 @@ interface LocationSearchFieldProps {
 }
 
 const MIN_QUERY_LENGTH = 3;
-// Nominatim's usage policy asks for roughly one request/second per app —
-// this debounce is what keeps a fast typist from firing a search per
-// keystroke; it's a convenience layer in front of the same /api/geocode
-// proxy the explicit "Find location" fallback below it already uses.
-const DEBOUNCE_MS = 350;
+// Nominatim's usage policy caps usage at roughly one request/second per
+// app and is strict about not hitting it per-keystroke — 500ms keeps a
+// realistic typing cadence from ever exceeding that, with margin. This is
+// a convenience layer in front of the same /api/geocode proxy the explicit
+// "Find location" fallback below it already uses.
+const DEBOUNCE_MS = 500;
 
 // Live autocomplete dropdown, shared by PlaceForm and AddStopForm — types
 // a name, sees matching real places as they type (ARCHITECTURE.md §1c
