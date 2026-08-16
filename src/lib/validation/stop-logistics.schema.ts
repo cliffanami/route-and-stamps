@@ -8,6 +8,13 @@ export const stopLogisticsSchema = z.object({
   meals_info: z.string().trim().max(500).nullable(),
   guide_info: z.string().trim().max(500).nullable(),
   flight_info: z.string().trim().max(500).nullable(),
+  // Structured scheduling fields (ROADMAP.md Milestone D) — date_label
+  // stays as a free-text override; these are what check_scheduled_arrivals()
+  // actually reads. arrival_time is a full timestamp (flights especially);
+  // start_date/end_date are date-only.
+  start_date: z.string().trim().min(1).nullable(),
+  end_date: z.string().trim().min(1).nullable(),
+  arrival_time: z.string().trim().min(1).nullable(),
 });
 
 export type StopLogisticsInput = z.infer<typeof stopLogisticsSchema>;

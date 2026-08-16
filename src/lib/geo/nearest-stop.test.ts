@@ -17,6 +17,9 @@ function makeStop(overrides: Partial<Stop>): Stop {
     meals_info: null,
     guide_info: null,
     flight_info: null,
+    start_date: null,
+    end_date: null,
+    arrival_time: null,
     created_at: new Date().toISOString(),
     ...overrides,
   };

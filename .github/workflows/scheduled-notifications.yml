@@ -1,0 +1,48 @@
+name: Scheduled notifications
+
+# Daily check for arrival estimates and packing due-dates (ROADMAP.md
+# Milestone D) — every other notification trigger in this app fires on
+# insert; this is the first that needs to fire on the clock instead.
+# Reuses the same repo secrets as the heartbeat workflow (SUPABASE_URL,
+# SUPABASE_ANON_KEY) — no service-role key needed, since both RPC targets
+# are SECURITY DEFINER functions (same pattern as redeem_invite).
+#
+# Uses POST, not the heartbeat's GET: both functions are VOLATILE (they
+# insert rows), and PostgREST requires POST for RPC calls to volatile
+# functions — GET is reserved for stable/immutable calls specifically so a
+# read can't be triggered into having a side effect.
+#
+# Best-effort timing (GitHub's scheduled workflows can run late under
+# load) and UTC-only date comparisons (no timezone column exists yet) are
+# both accepted slop for what an estimate/reminder needs to do — see the
+# migration's own comments for the full reasoning.
+
+on:
+  schedule:
+    - cron: "0 21 * * *" # Once daily, 21:00 UTC (~06:00 JST)
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check scheduled arrivals
+        run: |
+          curl --fail --silent --show-error -X POST \
+            "${SUPABASE_URL}/rest/v1/rpc/check_scheduled_arrivals" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" -d '{}'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      - name: Check packing reminders
+        run: |
+          curl --fail --silent --show-error -X POST \
+            "${SUPABASE_URL}/rest/v1/rpc/check_packing_reminders" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" -d '{}'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}

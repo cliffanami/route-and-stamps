@@ -9,6 +9,9 @@ export const packingItemSchema = z.object({
   category: z.string().trim().max(60).nullable(),
   is_document: z.boolean(),
   owner_id: z.string().uuid().nullable(),
+  // Reminder fires via check_packing_reminders() (ROADMAP.md Milestone D) —
+  // notifies the owner if set, or every trip member if shared.
+  due_date: z.string().trim().min(1).nullable(),
 });
 
 export type PackingItemInput = z.infer<typeof packingItemSchema>;

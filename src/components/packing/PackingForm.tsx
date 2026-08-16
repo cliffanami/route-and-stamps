@@ -36,6 +36,7 @@ export function PackingForm({
     item && item.owner_id !== null ? "mine" : "shared",
   );
   const [isDocument, setIsDocument] = useState(item?.is_document ?? false);
+  const [dueDate, setDueDate] = useState(item?.due_date ?? "");
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent) {
@@ -47,6 +48,7 @@ export function PackingForm({
       category: category.trim() || null,
       is_document: isDocument,
       owner_id: scope === "mine" ? currentUserId : null,
+      due_date: dueDate || null,
     };
 
     try {
@@ -115,6 +117,17 @@ export function PackingForm({
         />
         This is a document (passport, visa, etc.)
       </label>
+
+      <div className="field">
+        <label htmlFor="packing-due-date">Reminder date (optional)</label>
+        <input
+          id="packing-due-date"
+          type="date"
+          className="input"
+          value={dueDate}
+          onChange={(event) => setDueDate(event.target.value)}
+        />
+      </div>
 
       {error && <p className="text-muted">{error}</p>}
 

@@ -9,6 +9,7 @@ function makeItem(
     category: "Documents",
     is_document: true,
     owner_id: null,
+    due_date: null,
     ...overrides,
   };
 }

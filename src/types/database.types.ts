@@ -27,6 +27,9 @@ export interface Stop {
   meals_info: string | null;
   guide_info: string | null;
   flight_info: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  arrival_time: string | null;
   created_at: string;
 }
 
@@ -115,6 +118,7 @@ export interface PackingItem {
   category: string | null;
   is_document: boolean;
   is_checked: boolean;
+  due_date: string | null;
   created_at: string;
 }
 

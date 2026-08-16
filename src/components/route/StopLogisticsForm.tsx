@@ -36,6 +36,13 @@ export function StopLogisticsForm({
     guide_info: stop.guide_info ?? "",
     flight_info: stop.flight_info ?? "",
   });
+  // datetime-local inputs need "YYYY-MM-DDTHH:mm", not a full ISO string
+  // with seconds/timezone — trimmed to the 16 chars that input accepts.
+  const [startDate, setStartDate] = useState(stop.start_date ?? "");
+  const [endDate, setEndDate] = useState(stop.end_date ?? "");
+  const [arrivalTime, setArrivalTime] = useState(
+    stop.arrival_time ? stop.arrival_time.slice(0, 16) : "",
+  );
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent) {
@@ -49,6 +56,9 @@ export function StopLogisticsForm({
         meals_info: values.meals_info.trim() || null,
         guide_info: values.guide_info.trim() || null,
         flight_info: values.flight_info.trim() || null,
+        start_date: startDate || null,
+        end_date: endDate || null,
+        arrival_time: arrivalTime ? new Date(arrivalTime).toISOString() : null,
       });
       showToast("Logistics saved");
       onDone();
@@ -75,6 +85,41 @@ export function StopLogisticsForm({
           />
         </div>
       ))}
+
+      <div className="field">
+        <label htmlFor="stop-start-date">Start date (optional)</label>
+        <input
+          id="stop-start-date"
+          type="date"
+          className="input"
+          value={startDate}
+          onChange={(event) => setStartDate(event.target.value)}
+        />
+      </div>
+
+      <div className="field">
+        <label htmlFor="stop-end-date">End date (optional)</label>
+        <input
+          id="stop-end-date"
+          type="date"
+          className="input"
+          value={endDate}
+          onChange={(event) => setEndDate(event.target.value)}
+        />
+      </div>
+
+      <div className="field">
+        <label htmlFor="stop-arrival-time">
+          Scheduled arrival (optional, e.g. flight landing time)
+        </label>
+        <input
+          id="stop-arrival-time"
+          type="datetime-local"
+          className="input"
+          value={arrivalTime}
+          onChange={(event) => setArrivalTime(event.target.value)}
+        />
+      </div>
 
       {error && <p className="text-muted">{error}</p>}
 

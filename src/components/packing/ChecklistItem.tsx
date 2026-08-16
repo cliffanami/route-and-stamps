@@ -36,6 +36,12 @@ export function ChecklistItem({
         >
           {item.name}
           {item.category && ` — ${item.category}`}
+          {item.due_date && !item.is_checked && (
+            <span className="text-muted">
+              {" "}
+              (due {new Date(item.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })})
+            </span>
+          )}
         </span>
       </label>
       <Button

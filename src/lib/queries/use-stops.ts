@@ -69,7 +69,8 @@ export function useAddStop(tripId: string) {
 }
 
 // Itinerary-linked logistics (ROADMAP.md M4) — a stop's hotel/meals/guide/
-// flight fields, edited via a small dialog on StopCard.
+// flight fields, plus scheduling fields (ROADMAP.md Milestone D:
+// start_date/end_date/arrival_time), edited via a small dialog on StopCard.
 export function useUpdateStopLogistics(tripId: string) {
   const queryClient = useQueryClient();
 

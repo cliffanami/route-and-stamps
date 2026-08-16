@@ -54,6 +54,20 @@ export function StopCard({
       place.lat !== null && place.lng !== null,
   );
 
+  // date_label is a free-text override — shown as-is if set. Otherwise
+  // fall back to the structured start_date/end_date (ROADMAP.md Milestone
+  // D), which is what check_scheduled_arrivals() actually reads; showing
+  // neither would leave the date silently invisible once someone's set it.
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const dateDisplay =
+    stop.date_label ??
+    (stop.start_date
+      ? stop.end_date && stop.end_date !== stop.start_date
+        ? `${formatDate(stop.start_date)} – ${formatDate(stop.end_date)}`
+        : formatDate(stop.start_date)
+      : null);
+
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
@@ -77,7 +91,18 @@ export function StopCard({
               <Tag variant="accent">{consensusCount} confirmed</Tag>
             )}
           </span>
-          {stop.date_label && <p className="text-muted">{stop.date_label}</p>}
+          {dateDisplay && <p className="text-muted">{dateDisplay}</p>}
+          {stop.arrival_time && (
+            <p className="text-muted">
+              Arriving{" "}
+              {new Date(stop.arrival_time).toLocaleString("en-US", {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </p>
+          )}
           {logisticsEntries.map((field) => (
             <p key={field.key} className="text-muted">
               {field.label}: {field.value}
