@@ -28,7 +28,16 @@ export function BottomNav({ tripId }: BottomNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="nav fixed inset-x-0 bottom-0 justify-around border-t border-[var(--color-divider)] bg-[var(--color-bg)]">
+    <nav
+      className="nav fixed inset-x-0 bottom-0 justify-around bg-[var(--color-bg)]"
+      style={{
+        // Broadsheet separates structure with whitespace/elevation, not
+        // rules (broadsheet-guide.md "Don't") — this reuses --shadow-sm's
+        // own color-mix rather than a divider line, just cast upward since
+        // the token set has no bottom-anchored-bar variant to draw from.
+        boxShadow: "0 -1px 2px color-mix(in srgb, var(--color-neutral-900) 14%, transparent)",
+      }}
+    >
       {TABS.map((tab) => {
         const href = `/trips/${tripId}/${tab.segment}`;
         const isActive = pathname === href;

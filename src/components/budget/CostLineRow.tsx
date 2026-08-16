@@ -54,19 +54,21 @@ export function CostLineRow({ tripId, line, onEdit }: CostLineRowProps) {
       </div>
       <CardTitle>{line.description}</CardTitle>
       <CardBody>{formatMinor(line.amount_minor, line.currency)}</CardBody>
-      <button
-        type="button"
-        className={`tag tag-${STATUS_VARIANT[line.status]}`}
-        onClick={() =>
-          updateStatus.mutate({
-            id: line.id,
-            status: STATUS_CYCLE[line.status],
-          })
-        }
-        disabled={updateStatus.isPending}
-      >
-        {STATUS_LABEL[line.status]}
-      </button>
+      <CardMeta>
+        <button
+          type="button"
+          className={`tag tag-${STATUS_VARIANT[line.status]}`}
+          onClick={() =>
+            updateStatus.mutate({
+              id: line.id,
+              status: STATUS_CYCLE[line.status],
+            })
+          }
+          disabled={updateStatus.isPending}
+        >
+          {STATUS_LABEL[line.status]}
+        </button>
+      </CardMeta>
     </Card>
   );
 }
