@@ -36,6 +36,17 @@ export function BottomNav({ tripId }: BottomNavProps) {
         // own color-mix rather than a divider line, just cast upward since
         // the token set has no bottom-anchored-bar variant to draw from.
         boxShadow: "0 -1px 2px color-mix(in srgb, var(--color-neutral-900) 14%, transparent)",
+        // Leaflet's map (Map page only) pans/zooms its own GPU-composited
+        // layers, which triggers a known Chromium compositing bug: a
+        // sibling position:fixed element's SVG icons stop painting even
+        // though every computed style reports them as visible (confirmed
+        // via direct DOM inspection — not a CSS override, and not
+        // transient). BottomNav had no explicit stacking order at all;
+        // isolating it into its own stacking context with a z-index above
+        // Leaflet's own pane scale (max 1000) keeps its paint independent
+        // of the map's repaints.
+        isolation: "isolate",
+        zIndex: 1000,
       }}
     >
       {TABS.map((tab) => {

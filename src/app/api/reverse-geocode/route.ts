@@ -40,6 +40,10 @@ export async function GET(request: Request) {
   nominatimUrl.searchParams.set("lon", String(parsed.data.lng));
   nominatimUrl.searchParams.set("format", "jsonv2");
   nominatimUrl.searchParams.set("addressdetails", "1");
+  // Without this, Nominatim returns address components in the place's local
+  // script (e.g. "千代田区" for a Tokyo ward) since the server-to-server
+  // fetch carries no browser Accept-Language to fall back on.
+  nominatimUrl.searchParams.set("accept-language", "en");
 
   let response: Response;
   try {
