@@ -13,10 +13,14 @@ import {
 import { useStops } from "@/lib/queries/use-stops";
 import { useAddPlace, findNearbyPlaces } from "@/lib/queries/use-places";
 import { nearestStop } from "@/lib/geo/nearest-stop";
+import { parsePlaceMention } from "@/lib/geo/parse-place-mention";
 import type { Place } from "@/types/database.types";
 
 type GeocodeResult = { lat: number; lng: number; town: string | null };
 
+// Tier 1 of M1.5's cascading place-name resolution (ARCHITECTURE.md §1c) —
+// hands a cleaned query to the existing Nominatim Route Handler, whose
+// contract is unchanged. Returns the top result only; no new endpoint.
 async function geocode(query: string): Promise<GeocodeResult | null> {
   const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
   const body = await res.json();
@@ -90,9 +94,10 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
     setDuplicates(await findNearbyPlaces(tripId, result.lat, result.lng));
   }
 
-  // Selecting a live-search suggestion is disambiguation — the matched
-  // place's own short name replaces whatever was typed, same as picking a
-  // result in any address autocomplete.
+  // Selecting a live-search suggestion is disambiguation (ARCHITECTURE.md
+  // §1c flagged the lack of this UI) — the matched place's own short name
+  // replaces whatever was typed, same as picking a result in any address
+  // autocomplete.
   async function handleSearchSelect(result: LocationSearchResult) {
     setName(result.label.split(",")[0].trim());
     setLocateError(null);
@@ -118,7 +123,32 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
     setDuplicates([]);
 
     try {
-      const top = await geocode(name);
+      // Tier 1: strip narrative filler / reformat "X in Y" before the
+      // existing Nominatim call — the call itself is unchanged.
+      const { query } = parsePlaceMention(name);
+      let top = await geocode(query);
+
+      // Tier 2 (optional, gated): only on a zero-result Tier 1 miss. Any
+      // failure here — disabled, unconfigured, timeout, upstream error —
+      // is caught and treated the same as "no extraction available".
+      if (!top) {
+        try {
+          const extractRes = await fetch("/api/extract-place", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: name }),
+          });
+          if (extractRes.ok) {
+            const { query: extractedQuery } = (await extractRes.json()) as {
+              query: string;
+            };
+            top = await geocode(extractedQuery);
+          }
+        } catch {
+          // Graceful fallback — Tier 2 failures never block adding a place.
+        }
+      }
+
       if (!top) {
         setLocateError(
           "No location found for that name — you can still save without a pin.",
