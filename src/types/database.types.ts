@@ -25,7 +25,6 @@ export interface Stop {
   order_index: number;
   date_label: string | null;
   is_pending: boolean;
-  hotel_info: string | null;
   guide_info: string | null;
   flight_info: string | null;
   start_date: string | null;
@@ -62,6 +61,7 @@ export interface Place {
   note: string | null;
   booking_status: BookingStatus;
   meal_tags: MealTag[];
+  is_accommodation: boolean;
   needs_name: boolean;
   visited_at: string | null;
   added_by: string;

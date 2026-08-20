@@ -172,8 +172,9 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
       {place.note && <p>{place.note}</p>}
 
       {consensus && <Tag variant="accent">Mutual must go</Tag>}
-      {place.meal_tags.length > 0 && (
+      {(place.is_accommodation || place.meal_tags.length > 0) && (
         <div className="flex flex-row gap-2">
+          {place.is_accommodation && <Tag variant="neutral">Accommodation</Tag>}
           {place.meal_tags.map((tag) => (
             <Tag key={tag} variant="neutral">
               {MEAL_TAG_LABEL[tag]}

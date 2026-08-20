@@ -18,6 +18,7 @@ function makePlace(overrides: Partial<Place>): Place {
     note: null,
     booking_status: "not_booked",
     meal_tags: [],
+    is_accommodation: false,
     needs_name: false,
     visited_at: null,
     added_by: "user-1",

@@ -19,7 +19,6 @@ interface StopCardProps {
 }
 
 const LOGISTICS_FIELDS = [
-  { key: "hotel_info", label: "Hotel" },
   { key: "guide_info", label: "Guide" },
   { key: "flight_info", label: "Flight" },
 ] as const;

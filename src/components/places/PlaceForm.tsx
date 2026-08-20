@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { DuplicateNudge } from "./DuplicateNudge";
 import { MealTagPicker } from "./MealTagPicker";
+import { AccommodationToggle } from "./AccommodationToggle";
 import {
   LocationSearchField,
   type LocationSearchResult,
@@ -78,6 +79,7 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
   const [stopId, setStopId] = useState("");
   const [duplicates, setDuplicates] = useState<Place[]>([]);
   const [mealTags, setMealTags] = useState<MealTag[]>([]);
+  const [isAccommodation, setIsAccommodation] = useState(false);
 
   // Shared by both the live-search dropdown and the explicit "Find
   // location" button below it — same "found a coordinate" tail: refine
@@ -184,6 +186,7 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
       town: located?.town ?? null,
       nearest_stop_id: stopId || null,
       meal_tags: mealTags,
+      is_accommodation: isAccommodation,
     });
     reset();
     setName("");
@@ -191,6 +194,7 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
     setStopId("");
     setDuplicates([]);
     setMealTags([]);
+    setIsAccommodation(false);
   }
 
   return (
@@ -247,6 +251,7 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
       <DuplicateNudge places={duplicates} />
 
       <MealTagPicker value={mealTags} onChange={setMealTags} />
+      <AccommodationToggle checked={isAccommodation} onChange={setIsAccommodation} />
 
       <div className="field">
         <label htmlFor="source_url">Link (optional)</label>

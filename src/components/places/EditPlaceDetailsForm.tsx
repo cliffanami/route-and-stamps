@@ -11,6 +11,7 @@ import {
   type LocationSearchResult,
 } from "./LocationSearchField";
 import { MealTagPicker } from "./MealTagPicker";
+import { AccommodationToggle } from "./AccommodationToggle";
 import { useStops } from "@/lib/queries/use-stops";
 import { useUpdatePlace } from "@/lib/queries/use-places";
 import { nearestStop } from "@/lib/geo/nearest-stop";
@@ -65,6 +66,7 @@ export function EditPlaceDetailsForm({
   );
   const [stopId, setStopId] = useState(place.nearest_stop_id ?? "");
   const [mealTags, setMealTags] = useState<MealTag[]>(place.meal_tags);
+  const [isAccommodation, setIsAccommodation] = useState(place.is_accommodation);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSearchSelect(result: LocationSearchResult) {
@@ -101,6 +103,7 @@ export function EditPlaceDetailsForm({
         town: located?.town ?? null,
         nearest_stop_id: stopId || null,
         meal_tags: mealTags,
+        is_accommodation: isAccommodation,
       });
       showToast("Place updated");
       onDone();
@@ -149,6 +152,7 @@ export function EditPlaceDetailsForm({
       )}
 
       <MealTagPicker value={mealTags} onChange={setMealTags} />
+      <AccommodationToggle checked={isAccommodation} onChange={setIsAccommodation} />
 
       <div className="field">
         <label htmlFor="edit-place-note">Note (optional)</label>

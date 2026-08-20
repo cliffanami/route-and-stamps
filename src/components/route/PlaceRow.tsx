@@ -64,6 +64,7 @@ export function PlaceRow({
       {place.town && <CardMeta>{place.town}</CardMeta>}
       {place.note && <CardBody>{place.note}</CardBody>}
       {consensus && <Tag variant="accent">Mutual must go</Tag>}
+      {place.is_accommodation && <Tag variant="neutral">Accommodation</Tag>}
       {place.meal_tags.map((tag) => (
         <Tag key={tag} variant="neutral">
           {MEAL_TAG_LABEL[tag]}

@@ -13,7 +13,6 @@ interface StopLogisticsFormProps {
 }
 
 const FIELDS = [
-  { key: "hotel_info", label: "Hotel" },
   { key: "guide_info", label: "Guide" },
   { key: "flight_info", label: "Flight" },
 ] as const;
@@ -30,7 +29,6 @@ export function StopLogisticsForm({
   const { showToast } = useToast();
 
   const [values, setValues] = useState({
-    hotel_info: stop.hotel_info ?? "",
     guide_info: stop.guide_info ?? "",
     flight_info: stop.flight_info ?? "",
   });
@@ -50,7 +48,6 @@ export function StopLogisticsForm({
     try {
       await updateLogistics.mutateAsync({
         stopId: stop.id,
-        hotel_info: values.hotel_info.trim() || null,
         guide_info: values.guide_info.trim() || null,
         flight_info: values.flight_info.trim() || null,
         start_date: startDate || null,

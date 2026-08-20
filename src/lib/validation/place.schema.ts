@@ -17,6 +17,11 @@ export const placeSchema = z.object({
   // doing both breakfast and dinner) — array, not a single enum (ROADMAP.md
   // Milestone E).
   meal_tags: z.array(z.enum(["breakfast", "lunch", "dinner"])).default([]),
+  // Where the trip is staying — mirrors meal_tags' pattern: a tag on an
+  // actual place rather than free text on the stop (ROADMAP.md Milestone E
+  // follow-up). Auto-associates with a stop via the place's own
+  // nearest_stop_id, same as any other place.
+  is_accommodation: z.boolean().default(false),
 });
 
 export type PlaceInput = z.infer<typeof placeSchema>;
