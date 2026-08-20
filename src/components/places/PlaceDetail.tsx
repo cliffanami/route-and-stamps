@@ -21,6 +21,7 @@ import { useVotes, useCastVote } from "@/lib/queries/use-votes";
 import { useTripMembers } from "@/lib/queries/use-trip-members";
 import { useCurrentUserId } from "@/lib/queries/use-current-user";
 import { useBudgetLines } from "@/lib/queries/use-budget-lines";
+import { useTrip } from "@/lib/queries/use-trip";
 import { formatMinor } from "@/lib/money/currency";
 import { isMutualMustGo } from "@/components/route/PlaceRow";
 
@@ -72,6 +73,7 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const { data: members = [] } = useTripMembers(tripId);
   const castVote = useCastVote(tripId);
   const { data: budgetLines = [] } = useBudgetLines(tripId);
+  const { data: trip } = useTrip(tripId);
 
   if (isLoading) return <p className="px-6 py-4 text-muted">Loading…</p>;
   if (!place) return <p className="px-6 py-4 text-muted">Place not found.</p>;
@@ -236,7 +238,8 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
       >
         <BudgetForm
           tripId={tripId}
-          existingCategories={Array.from(new Set(budgetLines.map((l) => l.category)))}
+          categories={trip?.budget_categories ?? []}
+          currencies={trip?.currencies ?? []}
           initialValues={{ place_id: placeId, description: place.name }}
           onDone={() => setAddingCost(false)}
         />

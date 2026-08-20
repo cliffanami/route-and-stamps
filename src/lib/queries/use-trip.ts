@@ -8,6 +8,10 @@ import {
   tripDetailsSchema,
   type TripDetailsInput,
 } from "@/lib/validation/trip-details.schema";
+import {
+  tripCategoryConfigSchema,
+  type TripCategoryConfigInput,
+} from "@/lib/validation/trip-category-config.schema";
 import type { Trip } from "@/types/database.types";
 
 export function useTrip(tripId: string) {
@@ -41,6 +45,29 @@ export function useUpdateTripBudgetSettings(tripId: string) {
           ? { ...input, budget_cap: null, budget_cap_currency: null }
           : input,
       );
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("trips")
+        .update(parsed)
+        .eq("id", tripId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trip", tripId] });
+    },
+  });
+}
+
+// Currency/category config lists (ROADMAP.md Milestone A follow-up) — each
+// TagListEditor on the Settings page calls this with the full updated set
+// of all three arrays on every add/remove, rather than a separate mutation
+// per list; there's no partial-update RPC, so a full-row update is simplest.
+export function useUpdateTripCategoryConfig(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: TripCategoryConfigInput) => {
+      const parsed = tripCategoryConfigSchema.parse(input);
       const supabase = createClient();
       const { error } = await supabase
         .from("trips")

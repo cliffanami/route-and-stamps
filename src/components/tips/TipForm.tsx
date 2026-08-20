@@ -11,18 +11,19 @@ import type { Tip, TipFormat } from "@/types/database.types";
 interface TipFormProps {
   tripId: string;
   onDone: () => void;
-  existingCategories: string[];
+  // Strict select (ROADMAP.md Milestone A follow-up) — sourced from the
+  // trip's own configured list (Trip Settings), not derived from
+  // already-used values.
+  categories: string[];
   tip?: Tip;
 }
 
-// Category is free-form (schema.sql comment: "not an enum" — PRD §6.4), so
-// suggestions come from a <datalist> of categories already in use on this
-// trip rather than a fixed list. Doubles as the edit form — pass an
-// existing `tip` to prefill and update it instead of creating a new one.
+// Doubles as the edit form — pass an existing `tip` to prefill and update
+// it instead of creating a new one.
 export function TipForm({
   tripId,
   onDone,
-  existingCategories,
+  categories,
   tip,
 }: TipFormProps) {
   const addTip = useAddTip(tripId);
@@ -33,6 +34,11 @@ export function TipForm({
   const isEditing = tip !== undefined;
 
   const [category, setCategory] = useState(tip?.category ?? "");
+  // Defensive: keeps a legacy category not in the current configured list
+  // selectable when editing an existing tip.
+  const categoryOptions = Array.from(
+    new Set([...categories, ...(tip ? [tip.category] : [])]),
+  );
   const [format, setFormat] = useState<TipFormat>(tip?.format ?? "text");
   const [contentText, setContentText] = useState(tip?.content_text ?? "");
   const [sourceUrl, setSourceUrl] = useState(tip?.source_url ?? "");
@@ -77,19 +83,20 @@ export function TipForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="field">
         <label htmlFor="tip-category">Category</label>
-        <input
+        <select
           id="tip-category"
           className="input"
-          list="tip-categories"
           value={category}
           onChange={(event) => setCategory(event.target.value)}
           required
-        />
-        <datalist id="tip-categories">
-          {existingCategories.map((c) => (
-            <option key={c} value={c} />
+        >
+          <option value="">— Select —</option>
+          {categoryOptions.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
           ))}
-        </datalist>
+        </select>
       </div>
 
       <div className="seg" role="radiogroup" aria-label="Tip format">

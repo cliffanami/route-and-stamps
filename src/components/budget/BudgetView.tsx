@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
@@ -36,11 +36,6 @@ export function BudgetView({ tripId }: BudgetViewProps) {
   const [editingLine, setEditingLine] = useState<BudgetLine | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  const categories = useMemo(
-    () => Array.from(new Set(lines.map((line) => line.category))),
-    [lines],
-  );
 
   const dialogOpen = addingLine || editingLine !== null;
   function closeDialog() {
@@ -115,7 +110,8 @@ export function BudgetView({ tripId }: BudgetViewProps) {
         <div className="flex flex-col gap-4">
           <BudgetForm
             tripId={tripId}
-            existingCategories={categories}
+            categories={trip.budget_categories}
+            currencies={trip.currencies}
             line={editingLine ?? undefined}
             onDone={closeDialog}
           />

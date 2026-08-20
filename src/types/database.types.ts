@@ -43,6 +43,9 @@ export interface Trip {
   budget_mode: BudgetMode;
   budget_cap: number | null;
   budget_cap_currency: string | null;
+  currencies: string[];
+  tip_categories: string[];
+  budget_categories: string[];
   created_by: string;
   created_at: string;
   updated_at: string;

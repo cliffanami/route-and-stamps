@@ -27,6 +27,13 @@ export function TripBudgetSettings({ tripId, trip }: TripBudgetSettingsProps) {
   );
   const [error, setError] = useState<string | null>(null);
 
+  // Defensive: keeps a legacy currency not in the current configured list
+  // (e.g. set before the list existed) selectable rather than silently
+  // dropped from the dropdown.
+  const currencyOptions = Array.from(
+    new Set([...trip.currencies, ...(trip.budget_cap_currency ? [trip.budget_cap_currency] : [])]),
+  );
+
   async function handleSave() {
     setError(null);
     try {
@@ -73,14 +80,24 @@ export function TripBudgetSettings({ tripId, trip }: TripBudgetSettingsProps) {
           </div>
           <div className="field flex-1">
             <label htmlFor="cap-currency">Cap currency</label>
-            <input
+            <select
               id="cap-currency"
               className="input"
               value={capCurrency}
               onChange={(event) => setCapCurrency(event.target.value)}
-              placeholder="KES"
-              maxLength={3}
-            />
+            >
+              <option value="">— Select —</option>
+              {currencyOptions.map((currency) => (
+                <option key={currency} value={currency}>
+                  {currency}
+                </option>
+              ))}
+            </select>
+            {currencyOptions.length === 0 && (
+              <p className="text-muted">
+                Add a currency in the list below first.
+              </p>
+            )}
           </div>
         </div>
       )}

@@ -7,6 +7,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { useTips, useDeleteTip } from "@/lib/queries/use-tips";
 import { usePlaces } from "@/lib/queries/use-places";
+import { useTrip } from "@/lib/queries/use-trip";
 import { useRealtimeSubscription } from "@/lib/queries/use-realtime-subscription";
 import { CategoryFilter } from "./CategoryFilter";
 import { TipCard } from "./TipCard";
@@ -20,6 +21,7 @@ interface TipsViewProps {
 export function TipsView({ tripId }: TipsViewProps) {
   const { data: tips = [], isLoading, error } = useTips(tripId);
   const { data: places = [] } = usePlaces(tripId);
+  const { data: trip } = useTrip(tripId);
   const deleteTip = useDeleteTip(tripId);
   useRealtimeSubscription("tips", tripId);
 
@@ -115,7 +117,7 @@ export function TipsView({ tripId }: TipsViewProps) {
         <div className="flex flex-col gap-4">
           <TipForm
             tripId={tripId}
-            existingCategories={categories}
+            categories={trip?.tip_categories ?? []}
             tip={editingTip ?? undefined}
             onDone={closeDialog}
           />

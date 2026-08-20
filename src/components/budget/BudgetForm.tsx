@@ -10,7 +10,11 @@ import type { BudgetLine } from "@/types/database.types";
 interface BudgetFormProps {
   tripId: string;
   onDone: () => void;
-  existingCategories: string[];
+  // Strict selects (ROADMAP.md Milestone A follow-up) — sourced from the
+  // trip's own configured lists (Trip Settings), not derived from
+  // already-used values.
+  categories: string[];
+  currencies: string[];
   line?: BudgetLine;
   // Pre-fills a new cost (distinct from `line`, which signals full-edit
   // mode) — used by PlaceDetail's "Add a cost" button (ROADMAP.md
@@ -19,26 +23,14 @@ interface BudgetFormProps {
   initialValues?: { place_id: string; description: string };
 }
 
-// Suggested categories from schema.sql's column comment, plus whatever's
-// already used on the trip — same free-tag-with-suggestions pattern as
-// TipForm's category input (ROADMAP.md M3/M4 share the shape).
-const SUGGESTED_CATEGORIES = [
-  "flights",
-  "accommodation",
-  "guided_tour",
-  "visa",
-  "meals",
-  "activities",
-  "other",
-];
-
 // Doubles as the edit form — pass an existing `line` to prefill and update
 // it instead of logging a new cost. Booking status stays owned by
 // CostLineRow's tap-to-cycle tag, not editable here.
 export function BudgetForm({
   tripId,
   onDone,
-  existingCategories,
+  categories,
+  currencies,
   line,
   initialValues,
 }: BudgetFormProps) {
@@ -57,8 +49,14 @@ export function BudgetForm({
   const [currency, setCurrency] = useState(line?.currency ?? "");
   const [error, setError] = useState<string | null>(null);
 
+  // Defensive: keeps a legacy value not in the current configured list
+  // selectable when editing an existing line, rather than silently
+  // dropped from the dropdown.
   const categoryOptions = Array.from(
-    new Set([...SUGGESTED_CATEGORIES, ...existingCategories]),
+    new Set([...categories, ...(line ? [line.category] : [])]),
+  );
+  const currencyOptions = Array.from(
+    new Set([...currencies, ...(line ? [line.currency] : [])]),
   );
 
   async function handleSubmit(event: React.FormEvent) {
@@ -101,19 +99,20 @@ export function BudgetForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="field">
         <label htmlFor="budget-category">Category</label>
-        <input
+        <select
           id="budget-category"
           className="input"
-          list="budget-categories"
           value={category}
           onChange={(event) => setCategory(event.target.value)}
           required
-        />
-        <datalist id="budget-categories">
+        >
+          <option value="">— Select —</option>
           {categoryOptions.map((c) => (
-            <option key={c} value={c} />
+            <option key={c} value={c}>
+              {c}
+            </option>
           ))}
-        </datalist>
+        </select>
       </div>
 
       <div className="field">
@@ -142,21 +141,20 @@ export function BudgetForm({
         </div>
         <div className="field flex-1">
           <label htmlFor="budget-currency">Currency</label>
-          <input
+          <select
             id="budget-currency"
             className="input"
-            list="budget-currencies"
             value={currency}
             onChange={(event) => setCurrency(event.target.value)}
-            placeholder="JPY"
-            maxLength={3}
             required
-          />
-          <datalist id="budget-currencies">
-            <option value="JPY" />
-            <option value="KES" />
-            <option value="USD" />
-          </datalist>
+          >
+            <option value="">— Select —</option>
+            {currencyOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

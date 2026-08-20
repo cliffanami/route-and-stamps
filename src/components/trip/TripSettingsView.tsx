@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useTrip } from "@/lib/queries/use-trip";
+import { useTrip, useUpdateTripCategoryConfig } from "@/lib/queries/use-trip";
+import { useToast } from "@/components/ui/Toast";
 import { TripDetailsForm } from "./TripDetailsForm";
+import { TagListEditor } from "./TagListEditor";
 import { TripBudgetSettings } from "@/components/budget/TripBudgetSettings";
+import type { TripCategoryConfigInput } from "@/lib/validation/trip-category-config.schema";
+import type { Trip } from "@/types/database.types";
 
 interface TripSettingsViewProps {
   tripId: string;
@@ -40,10 +44,67 @@ export function TripSettingsView({ tripId }: TripSettingsViewProps) {
         <TripBudgetSettings tripId={tripId} trip={trip} />
       </div>
 
+      <CategoryConfigSection tripId={tripId} trip={trip} />
+
       <div className="flex flex-col gap-3">
         <h2>Account</h2>
         <Link href="/profile">Profile</Link>
       </div>
+    </div>
+  );
+}
+
+// Backs the strict currency/category selects elsewhere in the app (budget
+// cap, cost lines, tips) — each list auto-saves through the same full-row
+// mutation on every add/remove (ROADMAP.md Milestone A follow-up).
+function CategoryConfigSection({ tripId, trip }: { tripId: string; trip: Trip }) {
+  const updateCategoryConfig = useUpdateTripCategoryConfig(tripId);
+  const { showToast } = useToast();
+
+  function save(next: Partial<TripCategoryConfigInput>) {
+    updateCategoryConfig.mutate(
+      {
+        currencies: trip.currencies,
+        tip_categories: trip.tip_categories,
+        budget_categories: trip.budget_categories,
+        ...next,
+      },
+      { onError: () => showToast("Couldn't save — try again.") },
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h2>Currencies &amp; categories</h2>
+      <p className="text-muted">
+        These lists back the dropdowns on the budget cap, cost lines, and
+        tips — only values added here can be selected.
+      </p>
+
+      <TagListEditor
+        label="Currencies"
+        values={trip.currencies}
+        onChange={(currencies) => save({ currencies })}
+        placeholder="KES"
+        normalize={(v) => v.trim().toUpperCase()}
+        validate={(v) =>
+          v.length === 3 ? null : "Use a 3-letter currency code, e.g. KES"
+        }
+      />
+
+      <TagListEditor
+        label="Tip categories"
+        values={trip.tip_categories}
+        onChange={(tip_categories) => save({ tip_categories })}
+        placeholder="Food"
+      />
+
+      <TagListEditor
+        label="Budget categories"
+        values={trip.budget_categories}
+        onChange={(budget_categories) => save({ budget_categories })}
+        placeholder="Activities"
+      />
     </div>
   );
 }
