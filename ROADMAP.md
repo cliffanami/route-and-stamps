@@ -193,11 +193,30 @@ Also shipped, as a fast-follow once Settings existed: currency/tip-category/budg
 
 **Goal:** narrower than originally scoped — real dates now ship as part of Milestone D, so this picks up once D is live and stop dates already exist. What's left: making the route itself reorderable and visually readable as a journey.
 
-- Manual reordering: `order_index` becomes mutable via drag-reorder. The `unique (trip_id, order_index)` constraint needs a set-based `UPDATE ... FROM (VALUES ...)` (Postgres validates the final state, not row-by-row — safe) or `DEFERRABLE INITIALLY DEFERRED`.
-- `transport_mode` enum on the stop itself, not a separate legs table — the route model is strictly linear (no branching), so "how we arrived at this stop" colors the segment from the previous one; the first stop has no incoming segment, which is correct.
-- Colored polyline + legend on `MapView.tsx`, keyed by `transport_mode` — genuinely new; the map currently only plots point markers, no line at all.
+Fully scoped in a dedicated session (2026-08-20) so the next build session can start straight into implementation — every decision below is settled, not open.
 
-**Acceptance:** stops can be dragged into a new order without a constraint violation; the map shows a colored line between stops with a legend identifying each transport mode.
+**Reordering — real drag, not buttons.** Broadsheet has no drag library today and touch drag-and-drop is genuinely hard to hand-roll well on mobile, so this adds `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities` (small, touch-friendly, accessible) rather than a hand-rolled pointer-event implementation — explicit call, confirmed rather than defaulted, since it's the one new dependency in this milestone.
+- `RouteSpine`'s stop list wraps in `DndContext` + `SortableContext` (`verticalListSortingStrategy`); each `StopCard` becomes sortable via `useSortable({ id: stop.id })`.
+- A dedicated grab-handle icon (Phosphor `DotsSixVertical`, duotone) in `StopCard`'s header is the drag target — *not* the whole card, since the card already has a tap-to-expand/collapse gesture that a full-card drag handle would conflict with.
+- Persistence: the `unique (trip_id, order_index)` constraint is a plain (non-deferrable) unique index today, not a deferrable constraint — rather than converting it, add a `reorder_stops(p_trip_id uuid, p_ids uuid[], p_orders int[])` `SECURITY INVOKER` RPC function (RLS already governs `stops` UPDATE, same as every other table) that does one set-based `UPDATE ... FROM (VALUES ...)` — Postgres validates uniqueness only after the full statement completes, so this is safe without any constraint change. Matches the existing pattern of RPC functions for anything needing atomicity the PostgREST client API can't express (`nearby_places()`, `redeem_invite()`, `check_scheduled_arrivals()`). New `useReorderStops(tripId)` mutation calls it via `supabase.rpc(...)` with the full reordered id list on every drag-end, then invalidates `["stops", tripId]`.
+
+**Transport mode — user-configured per trip, not a fixed enum.** Explicit call: the original "`transport_mode` enum" framing doesn't fit — modes vary by trip (this one needs cycling within some stops/cities, alongside train/bus/flight/etc.), and a Postgres enum's `ALTER TYPE ... ADD VALUE` friction (can't run in the same transaction that uses the new value, per ARCHITECTURE.md §1d) makes a fixed enum the wrong tool anyway. Reuses the exact pattern Milestone A's currency/category follow-up just established:
+- `trips.transport_modes text[] not null default '{}'` (additive) — a fourth `TagListEditor` list on the Settings page, in its own "Route" section (distinct from the existing "Currencies & categories" section, since this is route-scoped, not budget-scoped).
+- `stops.transport_mode text` (additive, nullable) — plain text, not an FK/enum, matching a value in the trip's configured list. Set via a new strict `<select>` in `StopLogisticsForm` (alongside Guide/Flight), sourced from `trip.transport_modes` — `RouteSpine` already fetches `trip` (since the Milestone A header work), so it threads down through `StopCard` → `StopLogisticsForm` as a prop, same as any other trip-scoped config list. Optional/nullable: an unset stop is not an error state, it's just not colored in yet (graceful-degradation philosophy, same as every other optional field in this app).
+
+**Colored polyline + legend on `MapView.tsx`** — genuinely new, the map currently only plots point markers, no line at all.
+- Since modes are open-ended (not a fixed named set), color/pattern can't be a hardcoded lookup table — assign a (color, dash-pattern) pair **positionally**, by each mode's index in `trip.transport_modes`, from a fixed ordered palette built entirely from Broadsheet's existing cyan/magenta ramps (no new colors invented, matching the same constraint the vote-scale mapping in ARCHITECTURE.md §1b already resolved for the identical "not enough accent hues" problem):
+  ```
+  1. --color-accent-700     solid   5. --color-accent-300    dotted
+  2. --color-accent-2-700   solid   6. --color-accent-2-300  dotted
+  3. --color-accent-500     dashed  7. --color-accent-900    dashed
+  4. --color-accent-2-500   dashed  8. --color-accent-2-900  dotted
+  ```
+  Known, accepted limitation: a 9th+ configured mode wraps back to slot 1 rather than growing the palette — acceptable for a two-person trip's realistic mode count, same "the slop is acceptable for what this needs to do" standard already applied to Milestone D's timezone slop.
+- One `<Polyline>` per consecutive stop pair (sorted by `order_index`), colored by the *arriving* stop's `transport_mode` (ROADMAP's existing rule: "how we arrived colors the segment from the previous one"); the first stop has no incoming segment. A stop with no `transport_mode` set renders its incoming segment as neutral gray (`--color-neutral-400`), solid — never a broken-looking gap.
+- Legend: a horizontal wrapped row of small swatch+label chips *below* the map (not a Leaflet canvas overlay — avoids z-index/control-collision complexity), showing only modes actually in use among the trip's stops, not the full configured list.
+
+**Acceptance:** stops can be dragged (real drag gesture, not buttons) into a new order without a constraint violation; a trip can configure its own transport modes (including a custom one like "cycling") from Trip Settings; the map shows a colored, patterned line between stops keyed to each stop's configured mode, with a legend below the map identifying each mode actually in use; a stop with no mode set still renders a visible (neutral) segment, never a gap.
 
 ---
 
