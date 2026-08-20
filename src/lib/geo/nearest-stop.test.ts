@@ -14,7 +14,6 @@ function makeStop(overrides: Partial<Stop>): Stop {
     date_label: null,
     is_pending: false,
     hotel_info: null,
-    meals_info: null,
     guide_info: null,
     flight_info: null,
     start_date: null,

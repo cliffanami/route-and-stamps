@@ -26,7 +26,6 @@ export interface Stop {
   date_label: string | null;
   is_pending: boolean;
   hotel_info: string | null;
-  meals_info: string | null;
   guide_info: string | null;
   flight_info: string | null;
   start_date: string | null;

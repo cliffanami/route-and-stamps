@@ -5,7 +5,6 @@ import { z } from "zod";
 // full stop schema; stop creation itself is still SQL-seeded only.
 export const stopLogisticsSchema = z.object({
   hotel_info: z.string().trim().max(500).nullable(),
-  meals_info: z.string().trim().max(500).nullable(),
   guide_info: z.string().trim().max(500).nullable(),
   flight_info: z.string().trim().max(500).nullable(),
   // Structured scheduling fields (ROADMAP.md Milestone D) — date_label
