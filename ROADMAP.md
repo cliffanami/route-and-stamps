@@ -309,6 +309,8 @@ Scoping below is a first pass, not final — by explicit call, this gets its own
 
 **Other-person live location.** A different, bigger, consent-sensitive feature from the already-planned foreground-only self-position pin — needs its own explicit opt-in, likely its own table, and a retention/staleness story. Not scoped until there's an answer on whether it's wanted at all.
 
+**Per-person packing completion, matrix-style.** Surfaced seeding the real Japan trip data (2026-08-20): today's `packing_items.owner_id` model is binary — a shared item (`owner_id null`) is one checkbox for the household, a personal item is one row per person, so representing "this task, tracked independently per person" means literally duplicating the row per person (what the visa-checklist seed does — 15 conceptual items become 30 rows). Proposed real fix: a `packing_item_checks` table (`item_id, user_id, checked_at`) — one row per person, modeled exactly like `votes` and the already-deferred `stop_checkins` above — with a per-item `is_shared` flag deciding whether the UI renders one checkbox (shared) or one column per current trip member (per-person), auto-extending as new members join rather than needing new rows added by hand. `PackingView`/`ChecklistItem` would need a real redesign (list-of-rows → item-by-member grid) to show this, not just a schema change. Not scoped in detail yet — flagged so the duplicate-row workaround doesn't quietly become the permanent model.
+
 ---
 
 ## Beyond M9 (platform vision — not scheduled)
