@@ -217,15 +217,16 @@ Regrouped once against a real implementation plan (superseding an earlier draft 
 
 ---
 
-### E — Meal indicators
+### E — Meal & accommodation indicators
 
-**Goal:** surface which places are meal stops, complementing the free-text `meals_info` already on stop logistics (M4) with a structured, glanceable signal at the place level — additive, not a replacement for the existing field.
+**Goal:** surface which places are meal stops and where the trip is staying — structured, glanceable signals at the place level, replacing (not sitting alongside) the equivalent free-text fields M4 put on stop logistics. Grew beyond the original meals-only scope during build: once meal_tags existed, the same "show the actual place" logic clearly applied to accommodation too — guide/flight stayed stop-level, since neither maps to a specific place the way a restaurant or hotel does.
 
-- `meal_type` on `places` (nullable, multi-select — breakfast/lunch/dinner; a place can carry more than one, e.g. a hotel restaurant doing both breakfast and dinner)
-- Badge/tag (Broadsheet `.tag`) on the place card and place detail page showing the selected meal(s)
-- No change to `meals_info` on stops — that free-text field already covers the hotel/meal-plan case from M4; this is a separate, structured signal on individual places
+- `meal_tags` on `places` (array, not nullable single value — breakfast/lunch/dinner; a place can carry more than one, e.g. a hotel restaurant doing both breakfast and dinner)
+- `is_accommodation` on `places` (boolean) — where the trip is staying, auto-associated with the right stop via the place's existing `nearest_stop_id`, same as any other place
+- Badge/tag (Broadsheet `.tag`) on the place card and place detail page showing meal tags and/or an "Accommodation" tag
+- `stops.meals_info` and `stops.hotel_info` both dropped, along with their existing data — explicit product call, not an oversight (ROADMAP history: both fields had real values in use — "All"/"All" for meals on Hiroshima/Tokyo, "Kyoto Ryokan Sakura"/"This one" for hotel on Kyoto/Hiroshima — deliberately not migrated anywhere else)
 
-**Acceptance:** marking a restaurant "dinner" shows a visible tag on both the Route page's place card and the place detail page; a place can carry more than one meal tag.
+**Acceptance:** marking a restaurant "dinner" shows a visible tag on both the Route page's place card and the place detail page; a place can carry more than one meal tag; marking a place as accommodation shows an "Accommodation" tag in the same places; the stop edit dialog no longer has Meals or Hotel fields, only Guide and Flight.
 
 ---
 
