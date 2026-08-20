@@ -4,6 +4,10 @@ import {
   tripBudgetSettingsSchema,
   type TripBudgetSettingsInput,
 } from "@/lib/validation/trip-budget-settings.schema";
+import {
+  tripDetailsSchema,
+  type TripDetailsInput,
+} from "@/lib/validation/trip-details.schema";
 import type { Trip } from "@/types/database.types";
 
 export function useTrip(tripId: string) {
@@ -37,6 +41,28 @@ export function useUpdateTripBudgetSettings(tripId: string) {
           ? { ...input, budget_cap: null, budget_cap_currency: null }
           : input,
       );
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("trips")
+        .update(parsed)
+        .eq("id", tripId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trip", tripId] });
+    },
+  });
+}
+
+// Name/description/date-range (ROADMAP.md Milestone A) — independent of
+// the budget-settings mutation above, same "one schema, two enforcement
+// points" pattern (CONVENTIONS.md §3).
+export function useUpdateTripDetails(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: TripDetailsInput) => {
+      const parsed = tripDetailsSchema.parse(input);
       const supabase = createClient();
       const { error } = await supabase
         .from("trips")

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PlusCircle } from "@phosphor-icons/react";
+import { useTrip } from "@/lib/queries/use-trip";
 import { useStops } from "@/lib/queries/use-stops";
 import { usePlaces } from "@/lib/queries/use-places";
 import { useVotes } from "@/lib/queries/use-votes";
@@ -19,6 +20,7 @@ interface RouteSpineProps {
 }
 
 export function RouteSpine({ tripId }: RouteSpineProps) {
+  const { data: trip } = useTrip(tripId);
   const stopsQuery = useStops(tripId);
   const placesQuery = usePlaces(tripId);
   const votesQuery = useVotes(tripId);
@@ -67,6 +69,13 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
 
   return (
     <div className="flex flex-col gap-8 p-6">
+      {trip && (
+        <div className="flex flex-col gap-1">
+          <h1>{trip.name}</h1>
+          {trip.description && <p className="text-muted">{trip.description}</p>}
+        </div>
+      )}
+
       {places.length === 0 && (
         <p className="text-muted">No places added yet.</p>
       )}

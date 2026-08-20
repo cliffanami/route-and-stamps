@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -11,7 +12,6 @@ import { useRealtimeSubscription } from "@/lib/queries/use-realtime-subscription
 import { BudgetSummary } from "./BudgetSummary";
 import { CostLineRow } from "./CostLineRow";
 import { BudgetForm } from "./BudgetForm";
-import { TripBudgetSettings } from "./TripBudgetSettings";
 import type { BudgetLine } from "@/types/database.types";
 
 interface BudgetViewProps {
@@ -89,9 +89,12 @@ export function BudgetView({ tripId }: BudgetViewProps) {
         </Button>
       </div>
 
-      <TripBudgetSettings tripId={tripId} trip={trip} />
-
       <BudgetSummary trip={trip} lines={lines} />
+
+      <p className="text-muted">
+        Cap and currency now live in{" "}
+        <Link href={`/trips/${tripId}/settings`}>Trip Settings</Link>.
+      </p>
 
       <div className="flex flex-col gap-3">
         {lines.map((line) => (

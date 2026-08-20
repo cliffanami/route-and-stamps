@@ -36,6 +36,7 @@ export interface Stop {
 export interface Trip {
   id: string;
   name: string;
+  description: string | null;
   start_date: string | null;
   end_date: string | null;
   is_international: boolean;

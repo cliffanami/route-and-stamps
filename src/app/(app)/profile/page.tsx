@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { ProfileForm } from "@/components/profile/ProfileForm";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -7,9 +8,10 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
 
   return (
-    <main className="p-6">
+    <main className="flex flex-col gap-4 p-6">
       <h1>Profile</h1>
-      <p>{user?.email}</p>
+      <p className="text-muted">{user?.email}</p>
+      <ProfileForm />
     </main>
   );
 }

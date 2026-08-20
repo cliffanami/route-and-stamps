@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users } from "@phosphor-icons/react/dist/ssr";
+import { Gear, Users } from "@phosphor-icons/react/dist/ssr";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
@@ -23,6 +23,13 @@ export default async function TripLayout({
           <Users weight="duotone" size={24} />
         </Link>
         <NotificationBell tripId={tripId} />
+        <Link
+          href={`/trips/${tripId}/settings`}
+          aria-label="Trip settings"
+          className="inline-flex items-center justify-center p-2"
+        >
+          <Gear weight="duotone" size={24} />
+        </Link>
       </div>
       <main className="flex-1">{children}</main>
       <BottomNav tripId={tripId} />

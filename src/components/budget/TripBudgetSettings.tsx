@@ -11,9 +11,9 @@ interface TripBudgetSettingsProps {
   trip: Trip;
 }
 
-// Cap vs. tally, set per trip (ROADMAP.md M4) — a small always-visible
-// settings panel on the Budget page rather than a separate settings route;
-// there's no trip-settings page anywhere else in the app yet either.
+// Cap vs. tally, set per trip (ROADMAP.md M4) — rendered on the Trip
+// Settings page (ROADMAP.md Milestone A) rather than the Budget page,
+// where it originally lived as a placement-gap panel.
 export function TripBudgetSettings({ tripId, trip }: TripBudgetSettingsProps) {
   const updateSettings = useUpdateTripBudgetSettings(tripId);
   const { showToast } = useToast();
