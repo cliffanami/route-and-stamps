@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { DuplicateNudge } from "./DuplicateNudge";
+import { MealTagPicker } from "./MealTagPicker";
 import {
   LocationSearchField,
   type LocationSearchResult,
@@ -14,7 +15,7 @@ import { useStops } from "@/lib/queries/use-stops";
 import { useAddPlace, findNearbyPlaces } from "@/lib/queries/use-places";
 import { nearestStop } from "@/lib/geo/nearest-stop";
 import { parsePlaceMention } from "@/lib/geo/parse-place-mention";
-import type { Place } from "@/types/database.types";
+import type { MealTag, Place } from "@/types/database.types";
 
 type GeocodeResult = { lat: number; lng: number; town: string | null };
 
@@ -76,6 +77,7 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
   const [located, setLocated] = useState<Located | null>(null);
   const [stopId, setStopId] = useState("");
   const [duplicates, setDuplicates] = useState<Place[]>([]);
+  const [mealTags, setMealTags] = useState<MealTag[]>([]);
 
   // Shared by both the live-search dropdown and the explicit "Find
   // location" button below it — same "found a coordinate" tail: refine
@@ -181,12 +183,14 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
       lng: located?.lng ?? null,
       town: located?.town ?? null,
       nearest_stop_id: stopId || null,
+      meal_tags: mealTags,
     });
     reset();
     setName("");
     setLocated(null);
     setStopId("");
     setDuplicates([]);
+    setMealTags([]);
   }
 
   return (
@@ -241,6 +245,8 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
       )}
 
       <DuplicateNudge places={duplicates} />
+
+      <MealTagPicker value={mealTags} onChange={setMealTags} />
 
       <div className="field">
         <label htmlFor="source_url">Link (optional)</label>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, CardTitle, CardBody, CardMeta } from "@/components/ui/Card";
 import { Tag } from "@/components/ui/Tag";
 import { VoteScale, VOTE_LEVEL_LABEL } from "@/components/places/VoteScale";
+import { MEAL_TAG_LABEL } from "@/components/places/MealTagPicker";
 import { useCastVote } from "@/lib/queries/use-votes";
 import type { TripMember } from "@/lib/queries/use-trip-members";
 import type { Place, Vote } from "@/types/database.types";
@@ -63,6 +64,11 @@ export function PlaceRow({
       {place.town && <CardMeta>{place.town}</CardMeta>}
       {place.note && <CardBody>{place.note}</CardBody>}
       {consensus && <Tag variant="accent">Mutual must go</Tag>}
+      {place.meal_tags.map((tag) => (
+        <Tag key={tag} variant="neutral">
+          {MEAL_TAG_LABEL[tag]}
+        </Tag>
+      ))}
       <VoteScale
         value={myVote}
         onChange={(level) => castVote.mutate({ placeId: place.id, level })}

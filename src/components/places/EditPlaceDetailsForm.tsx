@@ -10,10 +10,11 @@ import {
   LocationSearchField,
   type LocationSearchResult,
 } from "./LocationSearchField";
+import { MealTagPicker } from "./MealTagPicker";
 import { useStops } from "@/lib/queries/use-stops";
 import { useUpdatePlace } from "@/lib/queries/use-places";
 import { nearestStop } from "@/lib/geo/nearest-stop";
-import type { Place } from "@/types/database.types";
+import type { MealTag, Place } from "@/types/database.types";
 
 const noteSchema = z.object({
   note: z.string().trim().max(2000).optional().or(z.literal("")),
@@ -63,6 +64,7 @@ export function EditPlaceDetailsForm({
       : null,
   );
   const [stopId, setStopId] = useState(place.nearest_stop_id ?? "");
+  const [mealTags, setMealTags] = useState<MealTag[]>(place.meal_tags);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSearchSelect(result: LocationSearchResult) {
@@ -98,6 +100,7 @@ export function EditPlaceDetailsForm({
         lng: located?.lng ?? null,
         town: located?.town ?? null,
         nearest_stop_id: stopId || null,
+        meal_tags: mealTags,
       });
       showToast("Place updated");
       onDone();
@@ -144,6 +147,8 @@ export function EditPlaceDetailsForm({
           )}
         </div>
       )}
+
+      <MealTagPicker value={mealTags} onChange={setMealTags} />
 
       <div className="field">
         <label htmlFor="edit-place-note">Note (optional)</label>

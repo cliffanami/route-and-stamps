@@ -12,6 +12,7 @@ import { PhotoUpload } from "./PhotoUpload";
 import { EmbedLinkInput } from "./EmbedLinkInput";
 import { EditPlaceDetailsForm } from "./EditPlaceDetailsForm";
 import { VoteScale, VOTE_LEVEL_LABEL } from "./VoteScale";
+import { MEAL_TAG_LABEL } from "./MealTagPicker";
 import { LocationMapLoader } from "@/components/map/LocationMapLoader";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { BudgetForm } from "@/components/budget/BudgetForm";
@@ -171,6 +172,15 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
       {place.note && <p>{place.note}</p>}
 
       {consensus && <Tag variant="accent">Mutual must go</Tag>}
+      {place.meal_tags.length > 0 && (
+        <div className="flex flex-row gap-2">
+          {place.meal_tags.map((tag) => (
+            <Tag key={tag} variant="neutral">
+              {MEAL_TAG_LABEL[tag]}
+            </Tag>
+          ))}
+        </div>
+      )}
       <VoteScale
         value={myVote}
         onChange={(level) => castVote.mutate({ placeId, level })}

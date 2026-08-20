@@ -13,6 +13,10 @@ export const placeSchema = z.object({
   lng: z.number().min(-180).max(180).nullable(),
   town: z.string().max(200).nullable(),
   nearest_stop_id: z.string().uuid().nullable(),
+  // A place can be more than one meal at once (e.g. a hotel restaurant
+  // doing both breakfast and dinner) — array, not a single enum (ROADMAP.md
+  // Milestone E).
+  meal_tags: z.array(z.enum(["breakfast", "lunch", "dinner"])).default([]),
 });
 
 export type PlaceInput = z.infer<typeof placeSchema>;

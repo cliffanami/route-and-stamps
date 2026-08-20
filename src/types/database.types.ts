@@ -6,6 +6,7 @@
 export type VoteLevel =
   "interested" | "want" | "really_want" | "must_go" | "skip";
 export type BookingStatus = "not_booked" | "booked" | "confirmed";
+export type MealTag = "breakfast" | "lunch" | "dinner";
 export type TipFormat = "text" | "video";
 export type BudgetMode = "cap" | "tally";
 export type BudgetStatus = "not_booked" | "pending" | "paid";
@@ -61,6 +62,7 @@ export interface Place {
   photo_url: string | null;
   note: string | null;
   booking_status: BookingStatus;
+  meal_tags: MealTag[];
   needs_name: boolean;
   visited_at: string | null;
   added_by: string;
