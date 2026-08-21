@@ -34,9 +34,10 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
   useRealtimeSubscription("votes", tripId);
 
   const userId = useCurrentUserId();
-  // Skip is filterable, not removed (ROADMAP.md M1) — defaults to hidden
-  // so the route reads clean, but nothing is ever deleted by skipping.
-  const [hideSkipped, setHideSkipped] = useState(true);
+  // Skip is filterable, not removed (ROADMAP.md M1) — defaults to shown
+  // so a skip doesn't silently vanish a place from the route; hiding is an
+  // opt-in declutter, not the default view.
+  const [hideSkipped, setHideSkipped] = useState(false);
   const [addingStop, setAddingStop] = useState(false);
 
   const memberIds = members.map((m) => m.user_id);

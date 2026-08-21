@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PencilSimple } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useUpdateTripDetails } from "@/lib/queries/use-trip";
@@ -11,11 +12,55 @@ interface TripDetailsFormProps {
   trip: Trip;
 }
 
+// Read-only by default, same edit-mode-toggle convention as
+// PlaceDetail/StopDetail — a saved form shouldn't stay sitting open as
+// editable fields.
+export function TripDetailsForm({ tripId, trip }: TripDetailsFormProps) {
+  const [editing, setEditing] = useState(false);
+
+  if (!editing) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h2>{trip.name}</h2>
+          <Button
+            type="button"
+            variant="ghost"
+            icon
+            onClick={() => setEditing(true)}
+            aria-label="Edit trip details"
+          >
+            <PencilSimple weight="duotone" size={20} />
+          </Button>
+        </div>
+        {trip.description && <p>{trip.description}</p>}
+        {(trip.start_date || trip.end_date) && (
+          <p className="text-muted">
+            {trip.start_date ?? "—"} to {trip.end_date ?? "—"}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <EditTripDetailsForm
+      tripId={tripId}
+      trip={trip}
+      onDone={() => setEditing(false)}
+    />
+  );
+}
+
 // Name/description/date-range (ROADMAP.md Milestone A) — start_date/end_date
 // already existed on `trips` (0001_init.sql) but had no UI until now;
 // description is the one genuinely new field. Reuses the plain date-input
 // pattern StopLogisticsForm already established for Milestone D.
-export function TripDetailsForm({ tripId, trip }: TripDetailsFormProps) {
+function EditTripDetailsForm({
+  tripId,
+  trip,
+  onDone,
+}: TripDetailsFormProps & { onDone: () => void }) {
   const updateDetails = useUpdateTripDetails(tripId);
   const { showToast } = useToast();
 
@@ -46,6 +91,7 @@ export function TripDetailsForm({ tripId, trip }: TripDetailsFormProps) {
         end_date: endDate || null,
       });
       showToast("Trip details saved");
+      onDone();
     } catch {
       setError("Couldn't save trip details — try again.");
     }
@@ -80,6 +126,7 @@ export function TripDetailsForm({ tripId, trip }: TripDetailsFormProps) {
           type="date"
           className="input"
           value={startDate}
+          max={endDate || undefined}
           onChange={(event) => setStartDate(event.target.value)}
         />
       </div>
@@ -91,15 +138,21 @@ export function TripDetailsForm({ tripId, trip }: TripDetailsFormProps) {
           type="date"
           className="input"
           value={endDate}
+          min={startDate || undefined}
           onChange={(event) => setEndDate(event.target.value)}
         />
       </div>
 
       {error && <p className="text-muted">{error}</p>}
 
-      <Button type="submit" variant="primary" disabled={updateDetails.isPending}>
-        {updateDetails.isPending ? "Saving…" : "Save trip details"}
-      </Button>
+      <div className="flex gap-2">
+        <Button type="submit" variant="primary" disabled={updateDetails.isPending}>
+          {updateDetails.isPending ? "Saving…" : "Save trip details"}
+        </Button>
+        <Button type="button" variant="secondary" onClick={onDone}>
+          Cancel
+        </Button>
+      </div>
     </form>
   );
 }

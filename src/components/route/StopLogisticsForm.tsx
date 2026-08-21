@@ -211,6 +211,7 @@ export function StopLogisticsForm({
           type="date"
           className="input"
           value={startDate}
+          max={endDate || undefined}
           onChange={(event) => setStartDate(event.target.value)}
         />
       </div>
@@ -222,6 +223,7 @@ export function StopLogisticsForm({
           type="date"
           className="input"
           value={endDate}
+          min={startDate || undefined}
           onChange={(event) => setEndDate(event.target.value)}
         />
       </div>

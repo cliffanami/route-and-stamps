@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PencilSimple } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useUpdateTripBudgetSettings } from "@/lib/queries/use-trip";
@@ -13,8 +14,46 @@ interface TripBudgetSettingsProps {
 
 // Cap vs. tally, set per trip (ROADMAP.md M4) — rendered on the Trip
 // Settings page (ROADMAP.md Milestone A) rather than the Budget page,
-// where it originally lived as a placement-gap panel.
+// where it originally lived as a placement-gap panel. Read-only by
+// default, same edit-mode-toggle convention as PlaceDetail/StopDetail.
 export function TripBudgetSettings({ tripId, trip }: TripBudgetSettingsProps) {
+  const [editing, setEditing] = useState(false);
+
+  if (!editing) {
+    return (
+      <div className="flex items-center justify-between gap-2">
+        <p>
+          {trip.budget_mode === "cap"
+            ? `Cap: ${trip.budget_cap ?? "—"} ${trip.budget_cap_currency ?? ""}`
+            : "Tally (no cap)"}
+        </p>
+        <Button
+          type="button"
+          variant="ghost"
+          icon
+          onClick={() => setEditing(true)}
+          aria-label="Edit budget settings"
+        >
+          <PencilSimple weight="duotone" size={20} />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <EditTripBudgetSettings
+      tripId={tripId}
+      trip={trip}
+      onDone={() => setEditing(false)}
+    />
+  );
+}
+
+function EditTripBudgetSettings({
+  tripId,
+  trip,
+  onDone,
+}: TripBudgetSettingsProps & { onDone: () => void }) {
   const updateSettings = useUpdateTripBudgetSettings(tripId);
   const { showToast } = useToast();
 
@@ -43,6 +82,7 @@ export function TripBudgetSettings({ tripId, trip }: TripBudgetSettingsProps) {
         budget_cap_currency: mode === "cap" ? capCurrency : null,
       });
       showToast("Budget settings saved");
+      onDone();
     } catch {
       setError("Couldn't save budget settings — try again.");
     }
@@ -104,14 +144,19 @@ export function TripBudgetSettings({ tripId, trip }: TripBudgetSettingsProps) {
 
       {error && <p className="text-muted">{error}</p>}
 
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={handleSave}
-        disabled={updateSettings.isPending}
-      >
-        {updateSettings.isPending ? "Saving…" : "Save budget settings"}
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="primary"
+          onClick={handleSave}
+          disabled={updateSettings.isPending}
+        >
+          {updateSettings.isPending ? "Saving…" : "Save budget settings"}
+        </Button>
+        <Button type="button" variant="secondary" onClick={onDone}>
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 }

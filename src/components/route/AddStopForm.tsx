@@ -55,8 +55,11 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { isSubmitting, errors },
   } = useForm<DetailsValues>({ resolver: zodResolver(detailsSchema) });
+  const watchedStartDate = watch("start_date");
+  const watchedEndDate = watch("end_date");
 
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
@@ -166,6 +169,7 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
           id="stop-start-date"
           type="date"
           className="input"
+          max={watchedEndDate || undefined}
           {...register("start_date")}
         />
       </div>
@@ -174,6 +178,7 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
         <label htmlFor="stop-end-date">End date (optional)</label>
         <input
           id="stop-end-date"
+          min={watchedStartDate || undefined}
           type="date"
           className="input"
           {...register("end_date")}
