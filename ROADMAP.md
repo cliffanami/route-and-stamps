@@ -189,7 +189,7 @@ Also shipped, as a fast-follow once Settings existed: currency/tip-category/budg
 
 ---
 
-### C — Route cluster (date-based ordering, transport-mode line)
+### C — Route cluster (date-based ordering, transport-mode line) — shipped (2026-08-21)
 
 **Goal:** narrower than originally scoped twice now. First pass: real dates ship as part of Milestone D, so this picks up once D is live and stop dates already exist. Second pass (2026-08-21, confirmed explicitly, not defaulted): **date-based ordering replaces drag-reorder entirely, not just adds to it.** No drag interaction gets built — editing a stop's date *is* how its position changes, reusing the date-picker Stop Detail's Overview tab already has (ROADMAP's "eight items" bundle, 2026-08-21). What's left after that pivot: the Route page sorting by date, and the map's colored transport line.
 
@@ -197,8 +197,7 @@ Also shipped, as a fast-follow once Settings existed: currency/tip-category/budg
 
 **Transport mode — shipped already (2026-08-21), not still to build.** `trips.transport_modes` (per-trip configurable array, `TagListEditor` in Trip Settings, seeded with a starter default rather than empty) and `stops.transport_mode`/`transport_detail`/`transport_cost_status`/`departure_point`/`arrival_point` all landed via migration 0017 and are wired into `StopLogisticsForm`/Stop Detail's Overview tab as part of the Japan-trip seed and the "eight items" bundle. What's below (the map line) is the only piece of C still actually unbuilt.
 
-**Colored polyline + legend on `MapView.tsx`** — genuinely new, the map currently only plots point markers, no line at all.
-- Since modes are open-ended (not a fixed named set), color/pattern can't be a hardcoded lookup table — assign a (color, dash-pattern) pair **positionally**, by each mode's index in `trip.transport_modes`, from a fixed ordered palette built entirely from Broadsheet's existing cyan/magenta ramps (no new colors invented, matching the same constraint the vote-scale mapping in ARCHITECTURE.md §1b already resolved for the identical "not enough accent hues" problem):
+**Colored polyline + legend on `MapView.tsx` — shipped (2026-08-21).** Modes are open-ended (not a fixed named set), so color/pattern isn't a hardcoded lookup table — `transport-mode-line-style.ts` assigns a (color, dash-pattern) pair **positionally**, by each mode's index in `trip.transport_modes`, from a fixed 8-slot palette built entirely from Broadsheet's existing cyan/magenta ramps (no new colors invented, matching the same constraint the vote-scale mapping in ARCHITECTURE.md §1b already resolved for the identical "not enough accent hues" problem):
   ```
   1. --color-accent-700     solid   5. --color-accent-300    dotted
   2. --color-accent-2-700   solid   6. --color-accent-2-300  dotted
@@ -206,8 +205,9 @@ Also shipped, as a fast-follow once Settings existed: currency/tip-category/budg
   4. --color-accent-2-500   dashed  8. --color-accent-2-900  dotted
   ```
   Known, accepted limitation: a 9th+ configured mode wraps back to slot 1 rather than growing the palette — acceptable for a two-person trip's realistic mode count, same "the slop is acceptable for what this needs to do" standard already applied to Milestone D's timezone slop.
-- One `<Polyline>` per consecutive stop pair (sorted by `start_date`, falling back to `order_index` — same ordering rule the Route page itself now uses, per the date-based-ordering pivot above), colored by the *arriving* stop's `transport_mode` (ROADMAP's existing rule: "how we arrived colors the segment from the previous one"); the first stop has no incoming segment. A stop with no `transport_mode` set renders its incoming segment as neutral gray (`--color-neutral-400`), solid — never a broken-looking gap.
-- Legend: a horizontal wrapped row of small swatch+label chips *below* the map (not a Leaflet canvas overlay — avoids z-index/control-collision complexity), showing only modes actually in use among the trip's stops, not the full configured list.
+- One `<Polyline>` per consecutive stop pair (`sortStopsByDate` — same ordering rule the Route page itself uses), colored by the *arriving* stop's `transport_mode` ("how we arrived colors the segment from the previous one"); the first stop has no incoming segment. A stop with no `transport_mode` set renders its incoming segment as neutral gray (`--color-neutral-400`), solid — never a broken-looking gap.
+- Legend: a horizontal wrapped row of small swatch+label chips below the map (not a Leaflet canvas overlay — avoids z-index/control-collision complexity), showing only modes actually in use among the trip's stops, plus a neutral "Not set" entry only if at least one segment has no mode.
+- Surfaced and fixed a layout bug while verifying this live: the map's height was previously budgeted off a fixed `100dvh` calc that didn't account for `BottomNav`'s real (content-driven, not fixed) height, so the legend rendered fully behind the fixed nav — invisible despite being in the DOM. Fixed by sizing the map to a fixed `70dvh` instead of "fill exactly what's left," letting the page scroll for the legend rather than pixel-budgeting against a height that drifts with content; also bumped `TripLayout`'s `pb-16` to `pb-20` to match `BottomNav`'s actual rendered height (was silently 14px short before this).
 
 **Acceptance:** the Route page sorts stops by date, with an undated new stop falling back to insertion order; the map shows a colored, patterned line between stops keyed to each stop's configured transport mode, with a legend below the map identifying each mode actually in use; a stop with no mode set still renders a visible (neutral) segment, never a gap.
 

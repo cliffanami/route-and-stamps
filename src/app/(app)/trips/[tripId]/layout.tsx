@@ -13,7 +13,7 @@ export default async function TripLayout({
   const { tripId } = await params;
 
   return (
-    <div className="flex min-h-full flex-1 flex-col pb-16">
+    <div className="flex min-h-full flex-1 flex-col pb-20">
       <div className="flex justify-end gap-1 px-4 pt-2">
         <Link
           href={`/trips/${tripId}/members`}
