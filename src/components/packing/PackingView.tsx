@@ -1,19 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
-import { useTrip } from "@/lib/queries/use-trip";
+import { useTripMembers } from "@/lib/queries/use-trip-members";
 import {
   useTogglePackingItem,
+  useTogglePackingItemCheck,
   usePackingItems,
+  usePackingItemChecks,
   useDeletePackingItem,
 } from "@/lib/queries/use-packing-items";
 import { useRealtimeSubscription } from "@/lib/queries/use-realtime-subscription";
-import { ChecklistItem } from "./ChecklistItem";
+import { PackingMatrix } from "./PackingMatrix";
+import { PackingItemDetailDialog } from "./PackingItemDetailDialog";
 import { PackingForm } from "./PackingForm";
 import type { PackingItem } from "@/types/database.types";
 
@@ -21,45 +23,25 @@ interface PackingViewProps {
   tripId: string;
 }
 
-function Section({
-  title,
-  items,
-  onToggle,
-  onEdit,
-}: {
-  title: string;
-  items: PackingItem[];
-  onToggle: (item: PackingItem, isChecked: boolean) => void;
-  onEdit: (item: PackingItem) => void;
-}) {
-  if (items.length === 0) return null;
-
-  return (
-    <section className="flex flex-col gap-2">
-      <h2>{title}</h2>
-      <div className="flex flex-col gap-2">
-        {items.map((item) => (
-          <ChecklistItem
-            key={item.id}
-            item={item}
-            onToggle={(checked) => onToggle(item, checked)}
-            onEdit={() => onEdit(item)}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
+// Matrix view (item rows × member columns) replaced the old three-section
+// Shared/My-list/Documents layout — the latter's Documents section never
+// split by owner, so a per-person item (e.g. "Get bank statements")
+// visibly duplicated once per person with no label distinguishing them.
+// The matrix makes "one task, tracked independently per person" legible
+// at a glance instead (ROADMAP.md's packing-matrix follow-up).
 export function PackingView({ tripId }: PackingViewProps) {
-  const { data: trip } = useTrip(tripId);
   const { data: items = [], isLoading, error } = usePackingItems(tripId);
-  const toggleItem = useTogglePackingItem(tripId);
+  const { data: checks = [] } = usePackingItemChecks(tripId);
+  const { data: members = [] } = useTripMembers(tripId);
+  const toggleShared = useTogglePackingItem(tripId);
+  const toggleCheck = useTogglePackingItemCheck(tripId);
   const deleteItem = useDeletePackingItem(tripId);
   useRealtimeSubscription("packing_items", tripId);
+  useRealtimeSubscription("packing_item_checks", tripId);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [addingItem, setAddingItem] = useState(false);
+  const [detailItem, setDetailItem] = useState<PackingItem | null>(null);
   const [editingItem, setEditingItem] = useState<PackingItem | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -71,23 +53,21 @@ export function PackingView({ tripId }: PackingViewProps) {
       .then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
-  function handleToggle(item: PackingItem, isChecked: boolean) {
-    toggleItem.mutate({ id: item.id, isChecked });
-  }
-
-  const dialogOpen = addingItem || editingItem !== null;
-  function closeDialog() {
+  const formDialogOpen = addingItem || editingItem !== null;
+  function closeFormDialog() {
     setAddingItem(false);
     setEditingItem(null);
   }
 
   async function handleDelete() {
-    if (!editingItem) return;
+    const target = editingItem ?? detailItem;
+    if (!target) return;
     setDeleteError(null);
     try {
-      await deleteItem.mutateAsync(editingItem.id);
+      await deleteItem.mutateAsync(target.id);
       setConfirmingDelete(false);
-      closeDialog();
+      closeFormDialog();
+      setDetailItem(null);
     } catch (err) {
       setDeleteError(
         err instanceof Error ? err.message : "Couldn't delete that item — try again.",
@@ -108,14 +88,6 @@ export function PackingView({ tripId }: PackingViewProps) {
     return <p className="px-6 py-4 text-muted">Loading…</p>;
   }
 
-  const shared = items.filter(
-    (item) => item.owner_id === null && !item.is_document,
-  );
-  const mine = items.filter(
-    (item) => item.owner_id === userId && !item.is_document,
-  );
-  const documents = items.filter((item) => item.is_document);
-
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between gap-2">
@@ -130,55 +102,47 @@ export function PackingView({ tripId }: PackingViewProps) {
         </Button>
       </div>
 
-      {items.length === 0 && (
+      {items.length === 0 ? (
         <p className="text-muted">No packing items added yet.</p>
-      )}
-
-      <Section
-        title="Trip essentials"
-        items={shared}
-        onToggle={handleToggle}
-        onEdit={setEditingItem}
-      />
-      <Section
-        title="My list"
-        items={mine}
-        onToggle={handleToggle}
-        onEdit={setEditingItem}
-      />
-      {trip?.is_international && (
-        <Section
-          title="Visa & Documents"
-          items={documents}
-          onToggle={handleToggle}
-          onEdit={setEditingItem}
+      ) : (
+        <PackingMatrix
+          items={items}
+          checks={checks}
+          members={members}
+          currentUserId={userId}
+          onToggleShared={(item, checked) =>
+            toggleShared.mutate({ id: item.id, isChecked: checked })
+          }
+          onToggleCheck={(item, checked) =>
+            toggleCheck.mutate({ itemId: item.id, checked })
+          }
+          onShowDetail={setDetailItem}
         />
       )}
 
+      <PackingItemDetailDialog
+        item={detailItem}
+        checks={checks}
+        members={members}
+        onClose={() => setDetailItem(null)}
+        onEdit={() => {
+          setEditingItem(detailItem);
+          setDetailItem(null);
+        }}
+        onDelete={() => setConfirmingDelete(true)}
+      />
+
       {userId && (
         <Dialog
-          open={dialogOpen}
-          onClose={closeDialog}
+          open={formDialogOpen}
+          onClose={closeFormDialog}
           title={editingItem ? "Edit item" : "Add a packing item"}
         >
-          <div className="flex flex-col gap-4">
-            <PackingForm
-              tripId={tripId}
-              currentUserId={userId}
-              item={editingItem ?? undefined}
-              onDone={closeDialog}
-            />
-            {editingItem && (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setConfirmingDelete(true)}
-              >
-                <Trash weight="duotone" size={20} />
-                Delete item
-              </Button>
-            )}
-          </div>
+          <PackingForm
+            tripId={tripId}
+            item={editingItem ?? undefined}
+            onDone={closeFormDialog}
+          />
         </Dialog>
       )}
 

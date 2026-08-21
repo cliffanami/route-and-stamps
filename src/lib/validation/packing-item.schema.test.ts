@@ -8,21 +8,19 @@ function makeItem(
     name: "Passport",
     category: "Documents",
     is_document: true,
-    owner_id: null,
+    is_shared: true,
     due_date: null,
     ...overrides,
   };
 }
 
 describe("packingItemSchema", () => {
-  it("accepts a shared item (owner_id null)", () => {
+  it("accepts a shared item", () => {
     expect(packingItemSchema.safeParse(makeItem({})).success).toBe(true);
   });
 
-  it("accepts a personal item (owner_id set)", () => {
-    const result = packingItemSchema.safeParse(
-      makeItem({ owner_id: "11111111-1111-1111-1111-111111111111" }),
-    );
+  it("accepts a non-shared (per-person) item", () => {
+    const result = packingItemSchema.safeParse(makeItem({ is_shared: false }));
     expect(result.success).toBe(true);
   });
 

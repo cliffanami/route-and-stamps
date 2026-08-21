@@ -8,23 +8,18 @@ import type { PackingItem } from "@/types/database.types";
 
 interface PackingFormProps {
   tripId: string;
-  currentUserId: string;
   onDone: () => void;
   item?: PackingItem;
 }
 
-type Scope = "shared" | "mine";
-
-// Shared vs. personal is a scope choice, same .seg pattern TipForm uses for
-// text/video (ROADMAP.md M5) — owner_id null means shared/trip-essentials.
+// Shared vs. per-person is a scope choice, same .seg pattern TipForm uses
+// for text/video (ROADMAP.md M5, redesigned per the packing matrix
+// follow-up) — shared items use a single checkbox everyone shares;
+// per-person items get one independent checkbox per current trip member,
+// tracked via packing_item_checks, not a duplicated row per person.
 // Doubles as the edit form — pass an existing `item` to prefill and update
 // it instead of adding a new one.
-export function PackingForm({
-  tripId,
-  currentUserId,
-  onDone,
-  item,
-}: PackingFormProps) {
+export function PackingForm({ tripId, onDone, item }: PackingFormProps) {
   const addItem = useAddPackingItem(tripId);
   const updateItem = useUpdatePackingItem(tripId);
   const { showToast } = useToast();
@@ -32,9 +27,7 @@ export function PackingForm({
 
   const [name, setName] = useState(item?.name ?? "");
   const [category, setCategory] = useState(item?.category ?? "");
-  const [scope, setScope] = useState<Scope>(
-    item && item.owner_id !== null ? "mine" : "shared",
-  );
+  const [isShared, setIsShared] = useState(item?.is_shared ?? true);
   const [isDocument, setIsDocument] = useState(item?.is_document ?? false);
   const [dueDate, setDueDate] = useState(item?.due_date ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +40,7 @@ export function PackingForm({
       name,
       category: category.trim() || null,
       is_document: isDocument,
-      owner_id: scope === "mine" ? currentUserId : null,
+      is_shared: isShared,
       due_date: dueDate || null,
     };
 
@@ -94,17 +87,17 @@ export function PackingForm({
         />
       </div>
 
-      <div className="seg" role="radiogroup" aria-label="List">
-        {(["shared", "mine"] as const).map((value) => (
+      <div className="seg" role="radiogroup" aria-label="Tracking">
+        {(["shared", "per-person"] as const).map((value) => (
           <label key={value} className="seg-opt">
             <input
               type="radio"
               name="packing-scope"
               value={value}
-              checked={scope === value}
-              onChange={() => setScope(value)}
+              checked={isShared === (value === "shared")}
+              onChange={() => setIsShared(value === "shared")}
             />
-            {value === "shared" ? "Trip essentials" : "Just for me"}
+            {value === "shared" ? "Shared" : "Per person"}
           </label>
         ))}
       </div>

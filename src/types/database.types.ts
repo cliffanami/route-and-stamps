@@ -140,13 +140,24 @@ export interface BudgetLine {
 export interface PackingItem {
   id: string;
   trip_id: string;
-  owner_id: string | null; // null = shared/trip-essentials item
+  // Shared items use is_checked directly (single flag, unchanged);
+  // non-shared items track completion per-person via PackingItemCheck
+  // rows instead — is_checked stays false and unused for these.
+  is_shared: boolean;
   name: string;
   category: string | null;
   is_document: boolean;
   is_checked: boolean;
   due_date: string | null;
   created_at: string;
+}
+
+// One row per (item, person) who's checked a non-shared packing item —
+// modeled like Vote, not an ownership flag on a duplicated row.
+export interface PackingItemCheck {
+  item_id: string;
+  user_id: string;
+  checked_at: string;
 }
 
 export interface TripMember {

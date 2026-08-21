@@ -18,7 +18,13 @@ const TRIP_SCOPED_TABLES = new Set([
 ]);
 
 export function useRealtimeSubscription(
-  table: "places" | "votes" | "tips" | "budget_lines" | "packing_items",
+  table:
+    | "places"
+    | "votes"
+    | "tips"
+    | "budget_lines"
+    | "packing_items"
+    | "packing_item_checks",
   tripId: string,
 ) {
   const queryClient = useQueryClient();
