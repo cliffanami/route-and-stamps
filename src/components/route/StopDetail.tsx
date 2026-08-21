@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { Tag } from "@/components/ui/Tag";
+import { Card, CardTitle, CardMeta } from "@/components/ui/Card";
 import { DetailTabs } from "@/components/ui/DetailTabs";
+import { MEAL_TAG_LABEL } from "@/components/places/MealTagPicker";
+import { TransportModeIcon } from "./transport-mode-icon";
 import { TipCard } from "@/components/tips/TipCard";
 import { TipForm } from "@/components/tips/TipForm";
 import { CostLineRow } from "@/components/budget/CostLineRow";
@@ -65,14 +68,11 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
   if (isLoading) return <p className="px-6 py-4 text-muted">Loading…</p>;
   if (!stop) return <p className="px-6 py-4 text-muted">Stop not found.</p>;
 
-  const accommodationPlaces = places.filter(
-    (p) => p.nearest_stop_id === stopId && p.is_accommodation,
-  );
+  const stopPlaces = places.filter((p) => p.nearest_stop_id === stopId);
+  const accommodationPlaces = stopPlaces.filter((p) => p.is_accommodation);
   const stopTips = tips.filter((t) => t.related_stop_id === stopId);
   const stopCosts = budgetLines.filter((b) => b.stop_id === stopId);
   const placeNameById = new Map(places.map((p) => [p.id, p.name]));
-
-  const linkedPlacesCount = places.filter((p) => p.nearest_stop_id === stopId).length;
 
   const tipDialogOpen = addingTip || editingTip !== null;
   function closeTipDialog() {
@@ -157,7 +157,7 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
           onClose={() => setConfirmingDeleteStop(false)}
           onConfirm={handleDeleteStop}
           title="Delete this stop?"
-          description={`This stop has ${linkedPlacesCount} place${linkedPlacesCount === 1 ? "" : "s"} and ${stopCosts.length} cost${stopCosts.length === 1 ? "" : "s"} linked — they'll stay, just unassigned from any stop. This can't be undone.`}
+          description={`This stop has ${stopPlaces.length} place${stopPlaces.length === 1 ? "" : "s"} and ${stopCosts.length} cost${stopCosts.length === 1 ? "" : "s"} linked — they'll stay, just unassigned from any stop. This can't be undone.`}
           pending={deleteStop.isPending}
           error={deleteStopError}
         />
@@ -193,7 +193,14 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
       {(stop.transport_mode || stop.transport_detail || stop.departure_point || stop.arrival_point) && (
         <div className="flex flex-col gap-1">
           <h2>Getting here</h2>
-          {stop.transport_mode && <Tag variant="neutral">{stop.transport_mode}</Tag>}
+          {stop.transport_mode && (
+            <Tag variant="neutral">
+              <span className="flex items-center gap-1">
+                <TransportModeIcon mode={stop.transport_mode} />
+                {stop.transport_mode}
+              </span>
+            </Tag>
+          )}
           {stop.transport_detail && <p>{stop.transport_detail}</p>}
           {(stop.departure_point || stop.arrival_point) && (
             <p className="text-muted">
@@ -239,6 +246,35 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
         <LocationMapLoader lat={stop.lat} lng={stop.lng} title={stop.name} />
         <OpenInGoogleMapsLink lat={stop.lat} lng={stop.lng} />
       </div>
+    </div>
+  );
+
+  const placesContent = (
+    <div className="flex flex-col gap-3">
+      {stopPlaces.length === 0 ? (
+        <p className="text-muted">No places at this stop yet.</p>
+      ) : (
+        stopPlaces.map((place) => (
+          <Card key={place.id}>
+            <CardTitle>
+              <Link href={`/trips/${tripId}/places/${place.id}`}>{place.name}</Link>
+            </CardTitle>
+            {place.town && <CardMeta>{place.town}</CardMeta>}
+            {(place.is_accommodation || place.meal_tags.length > 0) && (
+              <CardMeta>
+                <div className="flex flex-wrap gap-2">
+                  {place.is_accommodation && <Tag variant="neutral">Accommodation</Tag>}
+                  {place.meal_tags.map((tag) => (
+                    <Tag key={tag} variant="neutral">
+                      {MEAL_TAG_LABEL[tag]}
+                    </Tag>
+                  ))}
+                </div>
+              </CardMeta>
+            )}
+          </Card>
+        ))
+      )}
     </div>
   );
 
@@ -307,6 +343,7 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
       <DetailTabs
         tabs={[
           { key: "overview", label: "Overview", content: overviewContent },
+          { key: "places", label: "Places", content: placesContent },
           {
             key: "tips",
             label: "Tips",

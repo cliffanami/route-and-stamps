@@ -9,6 +9,7 @@ import { useVotes } from "@/lib/queries/use-votes";
 import { useTripMembers } from "@/lib/queries/use-trip-members";
 import { useCurrentUserId } from "@/lib/queries/use-current-user";
 import { useRealtimeSubscription } from "@/lib/queries/use-realtime-subscription";
+import { sortStopsByDate } from "@/lib/geo/sort-stops-by-date";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { StopCard } from "./StopCard";
@@ -66,6 +67,11 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
   }
 
   const unassigned = visiblePlaces.filter((place) => !place.nearest_stop_id);
+  // Chronological, not insertion order (ROADMAP.md Milestone C's
+  // date-based-ordering pivot) — a stop added out of sequence (e.g.
+  // realizing a layover belongs before the first stop) still shows in the
+  // right place without needing a drag interaction.
+  const orderedStops = sortStopsByDate(stops);
 
   return (
     <div className="flex flex-col gap-8 p-6">
@@ -99,7 +105,7 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
         <p className="text-muted">No stops yet.</p>
       )}
 
-      {stops.map((stop) => {
+      {orderedStops.map((stop) => {
         const stopPlaces = visiblePlaces.filter(
           (place) => place.nearest_stop_id === stop.id,
         );
