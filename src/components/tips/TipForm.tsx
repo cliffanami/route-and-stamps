@@ -16,6 +16,11 @@ interface TipFormProps {
   // already-used values.
   categories: string[];
   tip?: Tip;
+  // Web Share Target "Add as Tip" (ROADMAP.md Milestone H) lands here —
+  // pre-fills the link field only, same as Add-a-Place's initialSourceUrl.
+  // No oEmbed fetch triggered; that only happens later, matching the
+  // manual-paste behavior this mirrors.
+  initialSourceUrl?: string;
 }
 
 // Doubles as the edit form — pass an existing `tip` to prefill and update
@@ -25,6 +30,7 @@ export function TipForm({
   onDone,
   categories,
   tip,
+  initialSourceUrl,
 }: TipFormProps) {
   const addTip = useAddTip(tripId);
   const updateTip = useUpdateTip(tripId);
@@ -39,9 +45,15 @@ export function TipForm({
   const categoryOptions = Array.from(
     new Set([...categories, ...(tip ? [tip.category] : [])]),
   );
-  const [format, setFormat] = useState<TipFormat>(tip?.format ?? "text");
+  // A shared link only makes sense against the "video" format — its field
+  // is the source_url one, unlike "text"'s content_text.
+  const [format, setFormat] = useState<TipFormat>(
+    tip?.format ?? (initialSourceUrl ? "video" : "text"),
+  );
   const [contentText, setContentText] = useState(tip?.content_text ?? "");
-  const [sourceUrl, setSourceUrl] = useState(tip?.source_url ?? "");
+  const [sourceUrl, setSourceUrl] = useState(
+    tip?.source_url ?? initialSourceUrl ?? "",
+  );
   const [relatedPlaceId, setRelatedPlaceId] = useState(
     tip?.related_place_id ?? "",
   );

@@ -16,9 +16,14 @@ import type { Tip } from "@/types/database.types";
 
 interface TipsViewProps {
   tripId: string;
+  // Web Share Target "Add as Tip" (ROADMAP.md Milestone H) — present means
+  // land straight in the add-tip dialog, pre-filled, rather than making
+  // the user tap "Add a tip" themselves after already choosing that
+  // destination on the share-chooser screen.
+  initialSourceUrl?: string;
 }
 
-export function TipsView({ tripId }: TipsViewProps) {
+export function TipsView({ tripId, initialSourceUrl }: TipsViewProps) {
   const { data: tips = [], isLoading, error } = useTips(tripId);
   const { data: places = [] } = usePlaces(tripId);
   const { data: trip } = useTrip(tripId);
@@ -26,7 +31,7 @@ export function TipsView({ tripId }: TipsViewProps) {
   useRealtimeSubscription("tips", tripId);
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [addingTip, setAddingTip] = useState(false);
+  const [addingTip, setAddingTip] = useState(initialSourceUrl !== undefined);
   const [editingTip, setEditingTip] = useState<Tip | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -119,6 +124,7 @@ export function TipsView({ tripId }: TipsViewProps) {
             tripId={tripId}
             categories={trip?.tip_categories ?? []}
             tip={editingTip ?? undefined}
+            initialSourceUrl={editingTip ? undefined : initialSourceUrl}
             onDone={closeDialog}
           />
           {editingTip && (

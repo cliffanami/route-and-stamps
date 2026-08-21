@@ -279,13 +279,14 @@ Scoping below is a first pass, not final — by explicit call, this gets its own
 
 ---
 
-### H — Share-to-app chooser
+### H — Share-to-app chooser — shipped (2026-08-21)
 
 **Goal:** extend Milestone B's Web Share Target (currently lands only in Add-a-Place) so a shared link can become either a Place or a Tip — always asking rather than guessing or defaulting, per explicit call.
 
-- Chooser screen inserted between the OS share sheet and the destination form — "Add as Place" / "Add as Tip" — shown every time, no remembered default
-- Reuses B's existing pre-fill behavior (source URL only, name left blank) for whichever destination is picked
+- `share-target/route.ts` now redirects to a new `/trips/[tripId]/share-choose` page instead of straight to Add-a-Place — a small `ShareChooser` client component with two buttons, "Add as Place" / "Add as Tip", shown every time, nothing remembered
+- Reuses B's existing pre-fill behavior for the Place destination unchanged (source URL only, name left blank); `TipForm` gained the same `initialSourceUrl` pattern for the Tip destination, defaulting the format toggle to "Video" (the only format where a link field applies) and auto-opening the Tips page's add-tip dialog rather than requiring an extra tap
 - Still Android-only, same manifest-level (`share_target`) constraint as B — no new iOS behavior
+- Verified end-to-end in a real browser (disposable account + throwaway trip, not the real "Japan 2026" trip) rather than just typecheck/lint: chooser renders both options, each one navigates and pre-fills correctly, zero console errors
 
 **Acceptance:** sharing a link from Instagram/TikTok on Android always shows the chooser first; picking either option lands pre-filled in the matching form, matching B's existing pre-fill behavior.
 

@@ -9,6 +9,10 @@ import { createClient } from "@/lib/supabase/server";
 // statically. Not reachable through (app)'s layout (this route lives
 // outside that route group), so auth is handled explicitly here, same
 // next-param round-trip pattern the invite flow already uses.
+//
+// Lands on the share-choose chooser (Milestone H), not directly on
+// Add-a-Place — always asks Place vs. Tip rather than assuming, per
+// explicit call.
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const sharedUrl = searchParams.get("shared_url") ?? searchParams.get("shared_text") ?? "";
@@ -31,7 +35,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/trips`);
   }
 
-  const addUrl = new URL(`/trips/${trips[0].id}/add`, origin);
-  if (sharedUrl) addUrl.searchParams.set("shared_url", sharedUrl);
-  return NextResponse.redirect(addUrl);
+  const chooseUrl = new URL(`/trips/${trips[0].id}/share-choose`, origin);
+  if (sharedUrl) chooseUrl.searchParams.set("shared_url", sharedUrl);
+  return NextResponse.redirect(chooseUrl);
 }

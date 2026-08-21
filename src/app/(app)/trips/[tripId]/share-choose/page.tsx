@@ -1,6 +1,6 @@
-import { TipsView } from "@/components/tips/TipsView";
+import { ShareChooser } from "@/components/share/ShareChooser";
 
-export default async function TipsPage({
+export default async function ShareChoosePage({
   params,
   searchParams,
 }: {
@@ -10,5 +10,5 @@ export default async function TipsPage({
   const { tripId } = await params;
   const { shared_url: sharedUrl } = await searchParams;
 
-  return <TipsView tripId={tripId} initialSourceUrl={sharedUrl} />;
+  return <ShareChooser tripId={tripId} sharedUrl={sharedUrl} />;
 }
