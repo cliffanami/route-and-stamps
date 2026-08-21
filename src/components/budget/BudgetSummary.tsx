@@ -12,16 +12,20 @@ interface BudgetSummaryProps {
 
 // Per-currency totals shown side by side, never blended (ROADMAP.md M4
 // acceptance criterion) — grouping by currency, not converting, is the
-// entire point. Only the cap-currency group ever gets compared against
-// trip.budget_cap; every other currency is just an independent total.
+// entire point. Paid vs. logged is a second, independent split within
+// each currency (ROADMAP.md's mark-as-paid work: "¥X paid of ¥Y logged",
+// not one blended figure) — logged is every line regardless of status,
+// paid is only what Mark-as-paid actually confirmed. The cap still
+// compares against the logged total, since a cap is about total
+// commitment, not just what's been paid out so far.
 export function BudgetSummary({ trip, lines }: BudgetSummaryProps) {
   const totalsByCurrency = useMemo(() => {
-    const totals = new Map<string, number>();
+    const totals = new Map<string, { logged: number; paid: number }>();
     for (const line of lines) {
-      totals.set(
-        line.currency,
-        (totals.get(line.currency) ?? 0) + line.amount_minor,
-      );
+      const entry = totals.get(line.currency) ?? { logged: 0, paid: 0 };
+      entry.logged += line.amount_minor;
+      if (line.status === "paid") entry.paid += line.amount_minor;
+      totals.set(line.currency, entry);
     }
     return totals;
   }, [lines]);
@@ -32,14 +36,14 @@ export function BudgetSummary({ trip, lines }: BudgetSummaryProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      {Array.from(totalsByCurrency.entries()).map(([currency, totalMinor]) => {
+      {Array.from(totalsByCurrency.entries()).map(([currency, { logged, paid }]) => {
         const isCapCurrency =
           trip.budget_mode === "cap" && trip.budget_cap_currency === currency;
         const capMinor =
           isCapCurrency && trip.budget_cap !== null
             ? toMinorUnits(String(trip.budget_cap), currency)
             : null;
-        const overCap = capMinor !== null && totalMinor > capMinor;
+        const overCap = capMinor !== null && logged > capMinor;
 
         return (
           <div
@@ -51,9 +55,9 @@ export function BudgetSummary({ trip, lines }: BudgetSummaryProps) {
               <span
                 style={overCap ? { color: "var(--color-accent-2)" } : undefined}
               >
-                {formatMinor(totalMinor, currency)}
+                {formatMinor(paid, currency)} paid of {formatMinor(logged, currency)} logged
                 {capMinor !== null && (
-                  <> of {formatMinor(capMinor, currency)} cap</>
+                  <> ({formatMinor(capMinor, currency)} cap)</>
                 )}
               </span>
               {overCap && <Tag variant="accent-2">Over cap</Tag>}

@@ -7,17 +7,22 @@ import { z } from "zod";
 // result exists, so this schema never actually sees a null pair, but the
 // type stays non-nullable to make that contract explicit rather than
 // silently accepting an unlocated stop.
-export const addStopSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(200),
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
-  town: z.string().max(200).nullable(),
-  // Real calendar-picker dates at creation time, not a free-text guess —
-  // date_label still exists as an optional override, editable later via
-  // StopLogisticsForm, for the rare case a clean date range can't
-  // represent what's actually planned.
-  start_date: z.string().trim().min(1).nullable(),
-  end_date: z.string().trim().min(1).nullable(),
-});
+export const addStopSchema = z
+  .object({
+    name: z.string().trim().min(1, "Name is required").max(200),
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    town: z.string().max(200).nullable(),
+    // Real calendar-picker dates at creation time, not a free-text guess —
+    // date_label still exists as an optional override, editable later via
+    // StopLogisticsForm, for the rare case a clean date range can't
+    // represent what's actually planned.
+    start_date: z.string().trim().min(1).nullable(),
+    end_date: z.string().trim().min(1).nullable(),
+  })
+  .refine(
+    (v) => !v.start_date || !v.end_date || v.end_date >= v.start_date,
+    { message: "End date can't be before the start date", path: ["end_date"] },
+  );
 
 export type AddStopInput = z.infer<typeof addStopSchema>;

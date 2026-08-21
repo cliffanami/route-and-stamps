@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { useAddBudgetLine, useUpdateBudgetLine } from "@/lib/queries/use-budget-lines";
+import {
+  useAddBudgetLine,
+  useUpdateBudgetLine,
+  useUpdateBudgetLinePaidAt,
+} from "@/lib/queries/use-budget-lines";
 import { minorToDecimalString } from "@/lib/money/currency";
 import type { BudgetLine } from "@/types/database.types";
 
@@ -18,14 +22,22 @@ interface BudgetFormProps {
   line?: BudgetLine;
   // Pre-fills a new cost (distinct from `line`, which signals full-edit
   // mode) — used by PlaceDetail's "Add a cost" button (ROADMAP.md
-  // Milestone B) to link the new line to that place without the user
-  // having to pick it.
-  initialValues?: { place_id: string; description: string };
+  // Milestone B) and Stop Detail's Costs tab to link the new line without
+  // the user having to pick it.
+  initialValues?: {
+    place_id?: string;
+    stop_id?: string;
+    description?: string;
+    category?: string;
+  };
 }
 
 // Doubles as the edit form — pass an existing `line` to prefill and update
 // it instead of logging a new cost. Booking status stays owned by
-// CostLineRow's tap-to-cycle tag, not editable here.
+// CostLineRow's tap-to-cycle tag / Mark-as-paid action, not editable here
+// — except paid_at itself, which is backdatable once a line is already
+// paid (ROADMAP.md's mark-as-paid work: "editable afterward for a
+// backdated entry").
 export function BudgetForm({
   tripId,
   onDone,
@@ -36,10 +48,13 @@ export function BudgetForm({
 }: BudgetFormProps) {
   const addLine = useAddBudgetLine(tripId);
   const updateLine = useUpdateBudgetLine(tripId);
+  const updatePaidAt = useUpdateBudgetLinePaidAt(tripId);
   const { showToast } = useToast();
   const isEditing = line !== undefined;
 
-  const [category, setCategory] = useState(line?.category ?? "");
+  const [category, setCategory] = useState(
+    line?.category ?? initialValues?.category ?? "",
+  );
   const [description, setDescription] = useState(
     line?.description ?? initialValues?.description ?? "",
   );
@@ -47,6 +62,7 @@ export function BudgetForm({
     line ? minorToDecimalString(line.amount_minor, line.currency) : "",
   );
   const [currency, setCurrency] = useState(line?.currency ?? "");
+  const [paidAt, setPaidAt] = useState(line?.paid_at ?? "");
   const [error, setError] = useState<string | null>(null);
 
   // Defensive: keeps a legacy value not in the current configured list
@@ -72,6 +88,9 @@ export function BudgetForm({
           amount,
           currency,
         });
+        if (line.status === "paid" && paidAt && paidAt !== line.paid_at) {
+          await updatePaidAt.mutateAsync({ id: line.id, paidAt });
+        }
         showToast("Cost updated");
       } else {
         await addLine.mutateAsync({
@@ -84,6 +103,7 @@ export function BudgetForm({
           payment_details: null,
           due_date: null,
           place_id: initialValues?.place_id ?? null,
+          stop_id: initialValues?.stop_id ?? null,
         });
         showToast("Cost logged");
       }
@@ -157,6 +177,19 @@ export function BudgetForm({
           </select>
         </div>
       </div>
+
+      {isEditing && line.status === "paid" && (
+        <div className="field">
+          <label htmlFor="budget-paid-at">Paid on</label>
+          <input
+            id="budget-paid-at"
+            type="date"
+            className="input"
+            value={paidAt}
+            onChange={(event) => setPaidAt(event.target.value)}
+          />
+        </div>
+      )}
 
       {error && <p className="text-muted">{error}</p>}
 

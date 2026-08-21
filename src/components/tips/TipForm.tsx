@@ -21,6 +21,10 @@ interface TipFormProps {
   // No oEmbed fetch triggered; that only happens later, matching the
   // manual-paste behavior this mirrors.
   initialSourceUrl?: string;
+  // Stop Detail / Place Detail's Tips tab "Add a tip" button lands here —
+  // pre-fills whichever link the tab itself is scoped to.
+  initialRelatedPlaceId?: string;
+  initialRelatedStopId?: string;
 }
 
 // Doubles as the edit form — pass an existing `tip` to prefill and update
@@ -31,6 +35,8 @@ export function TipForm({
   categories,
   tip,
   initialSourceUrl,
+  initialRelatedPlaceId,
+  initialRelatedStopId,
 }: TipFormProps) {
   const addTip = useAddTip(tripId);
   const updateTip = useUpdateTip(tripId);
@@ -55,10 +61,10 @@ export function TipForm({
     tip?.source_url ?? initialSourceUrl ?? "",
   );
   const [relatedPlaceId, setRelatedPlaceId] = useState(
-    tip?.related_place_id ?? "",
+    tip?.related_place_id ?? initialRelatedPlaceId ?? "",
   );
   const [relatedStopId, setRelatedStopId] = useState(
-    tip?.related_stop_id ?? "",
+    tip?.related_stop_id ?? initialRelatedStopId ?? "",
   );
   const [error, setError] = useState<string | null>(null);
 

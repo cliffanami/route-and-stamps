@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PencilSimple, Trash, Wallet } from "@phosphor-icons/react";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Dialog } from "@/components/ui/Dialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
+import { DetailTabs } from "@/components/ui/DetailTabs";
 import { MediaSlider } from "./MediaSlider";
 import { PhotoUpload } from "./PhotoUpload";
 import { EmbedLinkInput } from "./EmbedLinkInput";
@@ -16,14 +17,18 @@ import { MEAL_TAG_LABEL } from "./MealTagPicker";
 import { LocationMapLoader } from "@/components/map/LocationMapLoader";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { BudgetForm } from "@/components/budget/BudgetForm";
+import { CostLineRow } from "@/components/budget/CostLineRow";
+import { TipCard } from "@/components/tips/TipCard";
+import { TipForm } from "@/components/tips/TipForm";
 import { usePlace, useDeletePlace } from "@/lib/queries/use-places";
 import { useVotes, useCastVote } from "@/lib/queries/use-votes";
 import { useTripMembers } from "@/lib/queries/use-trip-members";
 import { useCurrentUserId } from "@/lib/queries/use-current-user";
-import { useBudgetLines } from "@/lib/queries/use-budget-lines";
+import { useBudgetLines, useDeleteBudgetLine } from "@/lib/queries/use-budget-lines";
+import { useTips, useDeleteTip } from "@/lib/queries/use-tips";
 import { useTrip } from "@/lib/queries/use-trip";
-import { formatMinor } from "@/lib/money/currency";
 import { isMutualMustGo } from "@/components/route/PlaceRow";
+import type { BudgetLine, Tip } from "@/types/database.types";
 
 interface PlaceDetailProps {
   tripId: string;
@@ -49,11 +54,10 @@ function inferProvider(
 
 // View and edit are deliberately distinct screens, not the same layout with
 // inputs left visible — view is read-only display, edit gathers every
-// editable field: name/location/nearest-stop/note (EditPlaceDetailsForm),
-// the link (EmbedLinkInput — kept separate from the details form since it
-// also drives the cached oEmbed fetch, not just a plain field update), and
-// the photo. Toggled locally rather than a separate route: there's nothing
-// else edit needs (no unsaved-draft state to protect on navigation).
+// editable field. Retrofitted onto the shared DetailTabs (Overview/Tips/
+// Costs) — same pattern as Stop Detail, built once and applied twice
+// rather than two bespoke layouts. Tips tab is new: related_place_id
+// existed but was never surfaced here before.
 export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const { data: place, isLoading } = usePlace(tripId, placeId);
   const deletePlace = useDeletePlace(tripId);
@@ -61,7 +65,18 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const [addingCost, setAddingCost] = useState(false);
+  const [editingCost, setEditingCost] = useState<BudgetLine | null>(null);
+  const [confirmingDeleteCost, setConfirmingDeleteCost] = useState(false);
+  const [deleteCostError, setDeleteCostError] = useState<string | null>(null);
+  const deleteCost = useDeleteBudgetLine(tripId);
+
+  const [addingTip, setAddingTip] = useState(false);
+  const [editingTip, setEditingTip] = useState<Tip | null>(null);
+  const [confirmingDeleteTip, setConfirmingDeleteTip] = useState(false);
+  const [deleteTipError, setDeleteTipError] = useState<string | null>(null);
+  const deleteTip = useDeleteTip(tripId);
 
   // Vote + proposer (ROADMAP.md Milestone B) — the same pattern PlaceRow
   // already shows on the Route page, ported here since this dedicated page
@@ -73,6 +88,7 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const { data: members = [] } = useTripMembers(tripId);
   const castVote = useCastVote(tripId);
   const { data: budgetLines = [] } = useBudgetLines(tripId);
+  const { data: tips = [] } = useTips(tripId);
   const { data: trip } = useTrip(tripId);
 
   if (isLoading) return <p className="px-6 py-4 text-muted">Loading…</p>;
@@ -91,6 +107,19 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
     .filter((entry) => entry.level !== undefined);
   const proposedBy = members.find((m) => m.user_id === place.added_by)?.displayName;
   const placeCosts = budgetLines.filter((line) => line.place_id === placeId);
+  const placeTips = tips.filter((tip) => tip.related_place_id === placeId);
+
+  const costDialogOpen = addingCost || editingCost !== null;
+  function closeCostDialog() {
+    setAddingCost(false);
+    setEditingCost(null);
+  }
+
+  const tipDialogOpen = addingTip || editingTip !== null;
+  function closeTipDialog() {
+    setAddingTip(false);
+    setEditingTip(null);
+  }
 
   async function handleDelete() {
     setDeleteError(null);
@@ -100,6 +129,34 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
     } catch (err) {
       setDeleteError(
         err instanceof Error ? err.message : "Couldn't delete that place — try again.",
+      );
+    }
+  }
+
+  async function handleDeleteCost() {
+    if (!editingCost) return;
+    setDeleteCostError(null);
+    try {
+      await deleteCost.mutateAsync(editingCost.id);
+      setConfirmingDeleteCost(false);
+      closeCostDialog();
+    } catch (err) {
+      setDeleteCostError(
+        err instanceof Error ? err.message : "Couldn't delete that cost — try again.",
+      );
+    }
+  }
+
+  async function handleDeleteTip() {
+    if (!editingTip) return;
+    setDeleteTipError(null);
+    try {
+      await deleteTip.mutateAsync(editingTip.id);
+      setConfirmingDeleteTip(false);
+      closeTipDialog();
+    } catch (err) {
+      setDeleteTipError(
+        err instanceof Error ? err.message : "Couldn't delete that tip — try again.",
       );
     }
   }
@@ -155,20 +212,8 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-4 p-6">
-      <div className="flex items-start justify-between gap-2">
-        <h1>{place.name}</h1>
-        <Button
-          type="button"
-          variant="ghost"
-          icon
-          onClick={() => setEditing(true)}
-          aria-label="Edit place"
-        >
-          <PencilSimple weight="duotone" size={20} />
-        </Button>
-      </div>
+  const overviewContent = (
+    <div className="flex flex-col gap-4">
       {place.town && <p className="text-muted">{place.town}</p>}
       {proposedBy && <p className="text-muted">Proposed by {proposedBy}</p>}
       {place.note && <p>{place.note}</p>}
@@ -211,39 +256,150 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
         sourceUrl={place.source_url}
         placeName={place.name}
       />
+    </div>
+  );
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <h2>Costs</h2>
-          <Button type="button" variant="secondary" onClick={() => setAddingCost(true)}>
-            <Wallet weight="duotone" size={18} />
-            Add a cost
-          </Button>
-        </div>
-        {placeCosts.length === 0 ? (
-          <p className="text-muted">No costs logged for this place yet.</p>
-        ) : (
-          placeCosts.map((line) => (
-            <p key={line.id}>
-              {line.description} — {formatMinor(line.amount_minor, line.currency)}
-            </p>
-          ))
-        )}
+  const tipsContent = (
+    <div className="flex flex-col gap-3">
+      {placeTips.length === 0 ? (
+        <p className="text-muted">No tips for this place yet.</p>
+      ) : (
+        placeTips.map((tip) => (
+          <TipCard
+            key={tip.id}
+            tip={tip}
+            relatedPlaceName={undefined}
+            onEdit={() => setEditingTip(tip)}
+          />
+        ))
+      )}
+    </div>
+  );
+
+  const costsContent = (
+    <div className="flex flex-col gap-3">
+      {placeCosts.length === 0 ? (
+        <p className="text-muted">No costs logged for this place yet.</p>
+      ) : (
+        placeCosts.map((line) => (
+          <CostLineRow
+            key={line.id}
+            tripId={tripId}
+            line={line}
+            onEdit={() => setEditingCost(line)}
+          />
+        ))
+      )}
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-4 p-6">
+      <div className="flex items-start justify-between gap-2">
+        <h1>{place.name}</h1>
+        <Button
+          type="button"
+          variant="ghost"
+          icon
+          onClick={() => setEditing(true)}
+          aria-label="Edit place"
+        >
+          <PencilSimple weight="duotone" size={20} />
+        </Button>
       </div>
 
+      <DetailTabs
+        tabs={[
+          { key: "overview", label: "Overview", content: overviewContent },
+          {
+            key: "tips",
+            label: "Tips",
+            content: tipsContent,
+            onAdd: () => setAddingTip(true),
+            addLabel: "Add a tip",
+          },
+          {
+            key: "costs",
+            label: "Costs",
+            content: costsContent,
+            onAdd: () => setAddingCost(true),
+            addLabel: "Add a cost",
+          },
+        ]}
+      />
+
       <Dialog
-        open={addingCost}
-        onClose={() => setAddingCost(false)}
-        title="Add a cost"
+        open={costDialogOpen}
+        onClose={closeCostDialog}
+        title={editingCost ? "Edit cost" : "Add a cost"}
       >
-        <BudgetForm
-          tripId={tripId}
-          categories={trip?.budget_categories ?? []}
-          currencies={trip?.currencies ?? []}
-          initialValues={{ place_id: placeId, description: place.name }}
-          onDone={() => setAddingCost(false)}
-        />
+        <div className="flex flex-col gap-4">
+          <BudgetForm
+            tripId={tripId}
+            categories={trip?.budget_categories ?? []}
+            currencies={trip?.currencies ?? []}
+            line={editingCost ?? undefined}
+            initialValues={{ place_id: placeId, description: place.name }}
+            onDone={closeCostDialog}
+          />
+          {editingCost && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmingDeleteCost(true)}
+            >
+              <Trash weight="duotone" size={20} />
+              Delete cost
+            </Button>
+          )}
+        </div>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={confirmingDeleteCost}
+        onClose={() => setConfirmingDeleteCost(false)}
+        onConfirm={handleDeleteCost}
+        title="Delete this cost?"
+        description="This can't be undone."
+        pending={deleteCost.isPending}
+        error={deleteCostError}
+      />
+
+      <Dialog
+        open={tipDialogOpen}
+        onClose={closeTipDialog}
+        title={editingTip ? "Edit tip" : "Add a tip"}
+      >
+        <div className="flex flex-col gap-4">
+          <TipForm
+            tripId={tripId}
+            categories={trip?.tip_categories ?? []}
+            tip={editingTip ?? undefined}
+            initialRelatedPlaceId={editingTip ? undefined : placeId}
+            onDone={closeTipDialog}
+          />
+          {editingTip && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmingDeleteTip(true)}
+            >
+              <Trash weight="duotone" size={20} />
+              Delete tip
+            </Button>
+          )}
+        </div>
+      </Dialog>
+
+      <DeleteConfirmDialog
+        open={confirmingDeleteTip}
+        onClose={() => setConfirmingDeleteTip(false)}
+        onConfirm={handleDeleteTip}
+        title="Delete this tip?"
+        description="This can't be undone."
+        pending={deleteTip.isPending}
+        error={deleteTipError}
+      />
     </div>
   );
 }

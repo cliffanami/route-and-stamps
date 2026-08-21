@@ -33,6 +33,10 @@ export function TripDetailsForm({ tripId, trip }: TripDetailsFormProps) {
       setError("Trip name is required");
       return;
     }
+    if (startDate && endDate && endDate < startDate) {
+      setError("End date can't be before the start date");
+      return;
+    }
 
     try {
       await updateDetails.mutateAsync({

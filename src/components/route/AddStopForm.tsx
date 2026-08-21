@@ -25,10 +25,15 @@ async function geocode(query: string): Promise<GeocodeResult | null> {
   return (body.results[0] as GeocodeResult | undefined) ?? null;
 }
 
-const detailsSchema = z.object({
-  start_date: z.string().optional().or(z.literal("")),
-  end_date: z.string().optional().or(z.literal("")),
-});
+const detailsSchema = z
+  .object({
+    start_date: z.string().optional().or(z.literal("")),
+    end_date: z.string().optional().or(z.literal("")),
+  })
+  .refine((v) => !v.start_date || !v.end_date || v.end_date >= v.start_date, {
+    message: "End date can't be before the start date",
+    path: ["end_date"],
+  });
 
 type DetailsValues = z.infer<typeof detailsSchema>;
 
@@ -50,7 +55,7 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
     register,
     handleSubmit,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm<DetailsValues>({ resolver: zodResolver(detailsSchema) });
 
   const [name, setName] = useState("");
@@ -173,6 +178,7 @@ export function AddStopForm({ tripId, onDone }: AddStopFormProps) {
           className="input"
           {...register("end_date")}
         />
+        {errors.end_date && <p className="text-muted">{errors.end_date.message}</p>}
       </div>
 
       <Button

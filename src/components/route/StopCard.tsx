@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { PencilSimple, CaretDown, CaretUp } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/Button";
-import { Dialog } from "@/components/ui/Dialog";
+import Link from "next/link";
+import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { Tag } from "@/components/ui/Tag";
-import { StopLogisticsForm } from "./StopLogisticsForm";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
 import type { Place, Stop } from "@/types/database.types";
@@ -18,18 +16,15 @@ interface StopCardProps {
   children: ReactNode;
 }
 
-const LOGISTICS_FIELDS = [
-  { key: "guide_info", label: "Guide" },
-  { key: "flight_info", label: "Flight" },
-] as const;
-
 // Not `.card` — a stop is a section of the route, not a discrete list item
 // (CONVENTIONS.md §5b reserves .card for things like the PlaceRow cards
 // inside it). Hierarchy comes from the type scale and whitespace instead.
 //
-// The place list is a collapsible summary (closed by default) — clicking
-// the stop name/summary is "the route item is clickable" and reveals both
-// the place cards and a small map of the stop's area, in one interaction.
+// This is a shortcut into Stop Detail now, same relationship PlaceRow has
+// to PlaceDetail — the name links there, editing lives there too (no more
+// inline pencil/edit-dialog here). The caret is a separate control: it
+// still expands/collapses the place list inline, since that's a genuinely
+// useful quick-browse that doesn't need a full page navigation.
 export function StopCard({
   tripId,
   stop,
@@ -37,16 +32,7 @@ export function StopCard({
   consensusCount,
   children,
 }: StopCardProps) {
-  const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  // Loose check, not `!== null` — if 0003_budget_logistics.sql hasn't run
-  // yet on a given environment, these columns are absent from the row
-  // entirely (undefined), not null, and a strict check let that render as
-  // a blank "Hotel: " row.
-  const logisticsEntries = LOGISTICS_FIELDS.map((field) => ({
-    ...field,
-    value: stop[field.key],
-  })).filter((field) => field.value != null);
   const locatedPlaces = places.filter(
     (place): place is Place & { lat: number; lng: number } =>
       place.lat !== null && place.lng !== null,
@@ -70,19 +56,23 @@ export function StopCard({
     <section className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col gap-1">
-          <button
-            type="button"
-            aria-expanded={expanded}
-            onClick={() => setExpanded((current) => !current)}
-            className="flex items-center gap-2 text-left"
-          >
-            <h2>{stop.name}</h2>
-            {expanded ? (
-              <CaretUp weight="duotone" size={18} />
-            ) : (
-              <CaretDown weight="duotone" size={18} />
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link href={`/trips/${tripId}/stops/${stop.id}`}>
+              <h2>{stop.name}</h2>
+            </Link>
+            <button
+              type="button"
+              aria-expanded={expanded}
+              aria-label={expanded ? "Collapse places" : "Expand places"}
+              onClick={() => setExpanded((current) => !current)}
+            >
+              {expanded ? (
+                <CaretUp weight="duotone" size={18} />
+              ) : (
+                <CaretDown weight="duotone" size={18} />
+              )}
+            </button>
+          </div>
           <span className="text-muted flex items-center gap-2">
             {places.length} place{places.length === 1 ? "" : "s"}
             {consensusCount > 0 && (
@@ -101,27 +91,8 @@ export function StopCard({
               })}
             </p>
           )}
-          {logisticsEntries.map((field) => (
-            <p key={field.key} className="text-muted">
-              {field.label}: {field.value}
-            </p>
-          ))}
-          <div onClick={(event) => event.stopPropagation()}>
-            <OpenInGoogleMapsLink lat={stop.lat} lng={stop.lng} />
-          </div>
+          <OpenInGoogleMapsLink lat={stop.lat} lng={stop.lng} />
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          icon
-          onClick={(event) => {
-            event.stopPropagation();
-            setEditing(true);
-          }}
-          aria-label="Edit logistics"
-        >
-          <PencilSimple weight="duotone" size={20} />
-        </Button>
       </div>
 
       {expanded && (
@@ -132,18 +103,6 @@ export function StopCard({
           <div className="flex flex-col gap-3">{children}</div>
         </>
       )}
-
-      <Dialog
-        open={editing}
-        onClose={() => setEditing(false)}
-        title={`${stop.name} logistics`}
-      >
-        <StopLogisticsForm
-          tripId={tripId}
-          stop={stop}
-          onDone={() => setEditing(false)}
-        />
-      </Dialog>
     </section>
   );
 }

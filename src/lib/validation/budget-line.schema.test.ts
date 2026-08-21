@@ -14,6 +14,8 @@ function makeLine(
     payment_details: null,
     due_date: null,
     place_id: null,
+    stop_id: null,
+    paid_at: null,
     ...overrides,
   };
 }

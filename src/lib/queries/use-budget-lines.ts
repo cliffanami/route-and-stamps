@@ -35,6 +35,7 @@ interface AddBudgetLineInput {
   payment_details: string | null;
   due_date: string | null;
   place_id: string | null;
+  stop_id: string | null;
 }
 
 // Factored out so both the mutation below and the offline drain handler
@@ -56,10 +57,8 @@ export async function insertBudgetLine(
   if (error) throw error;
 }
 
-// Offline write queue (ROADMAP.md M6) — same network-failure-queues-it
-// pattern as useAddPlace. The amount is converted to minor units (and
-// validated) before queueing, so the queued payload is already the exact
-// shape insertBudgetLine expects — no currency math re-run on replay.
+// Offline write queue (ROADMAP.md M6): a network failure queues the add
+// instead of failing it — validated first, so bad input never gets queued.
 export function useAddBudgetLine(tripId: string) {
   const queryClient = useQueryClient();
 
@@ -75,6 +74,8 @@ export function useAddBudgetLine(tripId: string) {
         payment_details: input.payment_details,
         due_date: input.due_date,
         place_id: input.place_id,
+        stop_id: input.stop_id,
+        paid_at: null,
       });
 
       try {
@@ -104,10 +105,10 @@ const editableFieldsSchema = budgetLineSchema.pick({
 });
 
 // Editing the loggable fields (category/description/amount/currency) —
-// separate from useUpdateBudgetLineStatus, which owns the tap-to-cycle
-// booking status. A partial Supabase update only touches the columns
-// given, so status/paid_by/payment_details/due_date are left alone
-// without needing to fetch and re-send them first.
+// separate from useUpdateBudgetLineStatus/useMarkBudgetLinePaid, which own
+// status/paid_at. A partial Supabase update only touches the columns
+// given, so the rest are left alone without needing to fetch and re-send
+// them first.
 export function useUpdateBudgetLine(tripId: string) {
   const queryClient = useQueryClient();
 
@@ -145,6 +146,28 @@ export function useUpdateBudgetLine(tripId: string) {
   });
 }
 
+// Backdating an already-paid line's paid_at (ROADMAP.md's mark-as-paid
+// work) — separate from useMarkBudgetLinePaid, which sets both status and
+// paid_at together on the initial mark; this only touches the date,
+// available once a line is already 'paid'.
+export function useUpdateBudgetLinePaidAt(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, paidAt }: { id: string; paidAt: string }) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("budget_lines")
+        .update({ paid_at: paidAt })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budget_lines", tripId] });
+    },
+  });
+}
+
 export function useDeleteBudgetLine(tripId: string) {
   const queryClient = useQueryClient();
 
@@ -160,9 +183,14 @@ export function useDeleteBudgetLine(tripId: string) {
   });
 }
 
+// Tap-to-cycle no longer reaches "paid" (ROADMAP.md's mark-as-paid work) —
+// only not_booked <-> pending, since reaching "paid" now needs the
+// explicit Mark-as-paid action that also records paid_at. From "paid",
+// tapping steps back to not_booked (an undo), clearing paid_at via the
+// same mutation below rather than leaving a stale date on an unpaid line.
 export const STATUS_CYCLE: Record<BudgetStatus, BudgetStatus> = {
   not_booked: "pending",
-  pending: "paid",
+  pending: "not_booked",
   paid: "not_booked",
 };
 
@@ -180,7 +208,33 @@ export function useUpdateBudgetLineStatus(tripId: string) {
       const supabase = createClient();
       const { error } = await supabase
         .from("budget_lines")
-        .update({ status })
+        // Any status other than "paid" means paid_at is meaningless —
+        // clear it here rather than only in the dedicated undo path, so
+        // this stays correct regardless of which caller changes status.
+        .update({ status, paid_at: status === "paid" ? undefined : null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budget_lines", tripId] });
+    },
+  });
+}
+
+// The real feature paid_at was added for — sets status='paid' and paid_at
+// to today in one action, distinct from the tap-cycle (ROADMAP.md's
+// mark-as-paid work). paid_at stays editable afterward via
+// useUpdateBudgetLinePaidAt, for a backdated entry.
+export function useMarkBudgetLinePaid(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient();
+      const today = new Date().toISOString().slice(0, 10);
+      const { error } = await supabase
+        .from("budget_lines")
+        .update({ status: "paid", paid_at: today })
         .eq("id", id);
       if (error) throw error;
     },
