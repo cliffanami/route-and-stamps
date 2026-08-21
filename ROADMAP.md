@@ -230,7 +230,7 @@ Also shipped, as a fast-follow once Settings existed: currency/tip-category/budg
 
 ---
 
-### E — Meal & accommodation indicators
+### E — Meal & accommodation indicators — shipped
 
 **Goal:** surface which places are meal stops and where the trip is staying — structured, glanceable signals at the place level, replacing (not sitting alongside) the equivalent free-text fields M4 put on stop logistics. Grew beyond the original meals-only scope during build: once meal_tags existed, the same "show the actual place" logic clearly applied to accommodation too — guide/flight stayed stop-level, since neither maps to a specific place the way a restaurant or hotel does.
 
