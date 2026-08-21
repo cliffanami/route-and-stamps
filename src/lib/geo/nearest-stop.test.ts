@@ -18,6 +18,12 @@ function makeStop(overrides: Partial<Stop>): Stop {
     start_date: null,
     end_date: null,
     arrival_time: null,
+    description: null,
+    transport_mode: null,
+    transport_detail: null,
+    transport_cost_status: null,
+    departure_point: null,
+    arrival_point: null,
     created_at: new Date().toISOString(),
     ...overrides,
   };

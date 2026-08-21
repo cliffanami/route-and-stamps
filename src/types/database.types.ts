@@ -7,6 +7,7 @@ export type VoteLevel =
   "interested" | "want" | "really_want" | "must_go" | "skip";
 export type BookingStatus = "not_booked" | "booked" | "confirmed";
 export type MealTag = "breakfast" | "lunch" | "dinner";
+export type TransportCostStatus = "included" | "own_account" | "check";
 export type TipFormat = "text" | "video";
 export type BudgetMode = "cap" | "tally";
 export type BudgetStatus = "not_booked" | "pending" | "paid";
@@ -30,6 +31,16 @@ export interface Stop {
   start_date: string | null;
   end_date: string | null;
   arrival_time: string | null;
+  description: string | null;
+  // Inter-stop transport only — a within-stop activity (e.g. a cycling
+  // day) stays in `description`, not here (ROADMAP.md Milestone C).
+  // transport_mode is plain text, not its own enum — valid values come
+  // from the trip's own transport_modes array, not a fixed schema-level set.
+  transport_mode: string | null;
+  transport_detail: string | null;
+  transport_cost_status: TransportCostStatus | null;
+  departure_point: string | null;
+  arrival_point: string | null;
   created_at: string;
 }
 
@@ -46,6 +57,12 @@ export interface Trip {
   currencies: string[];
   tip_categories: string[];
   budget_categories: string[];
+  outbound_travel_note: string | null;
+  return_travel_note: string | null;
+  // Per-trip configurable list backing stops.transport_mode's strict select
+  // (ROADMAP.md Milestone C) — defaults to a starter set on new trips
+  // (DB column default), stays freely editable per trip afterward.
+  transport_modes: string[];
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -112,7 +129,9 @@ export interface BudgetLine {
   paid_by: string | null;
   payment_details: string | null;
   due_date: string | null;
+  paid_at: string | null;
   place_id: string | null;
+  stop_id: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
