@@ -4,7 +4,7 @@ import { get, set } from "idb-keyval";
 // ROADMAP.md M6 names, not every entity in the app. Read on a failed
 // fetch (offline), written whenever a fetch succeeds, so the Route/Map/
 // Tips views still render something in airplane mode instead of an error.
-type SnapshotEntity = "places" | "stops" | "tips";
+type SnapshotEntity = "places" | "stops" | "tips" | "fun_facts";
 
 function snapshotKey(entity: SnapshotEntity, tripId: string) {
   return `snapshot:${entity}:${tripId}`;

@@ -243,15 +243,19 @@ Also shipped, as a fast-follow once Settings existed: currency/tip-category/budg
 
 ---
 
-### F — Fun facts feed
+### F — Fun facts feed — shipped (2026-08-22)
 
 **Goal:** a running feed of destination trivia, sourced from a mix of a free external API and content added directly by either of you — explicitly not AI-generated, to keep this at $0/month.
 
-- New `fun_facts` table: `trip_id`, optional `place_id`/`stop_id`, `source` (`wikipedia` | `manual`), `body`, `added_by` (nullable for API-sourced rows), `created_at`
-- Wikipedia REST summary API (`/page/summary/{title}`) called server-side via a new Route Handler — same free, keyless proxy pattern as Nominatim/oEmbed — keyed off each stop's city/place name, fetched once and cached in the table rather than re-fetched per view
-- Manual add form mirroring Tips' shape (text + optional place/stop link) for facts either of you write yourselves
-- Feed surfaced on the Route page as a small rotating strip (not the whole table at once) — reshuffles which cached facts are shown on every page load, and again automatically every 15 minutes if the page stays open, via TanStack Query's `refetchInterval`. Reshuffling only re-selects from what's already cached in `fun_facts`; it doesn't re-hit the Wikipedia API each time, so the 15-minute cadence costs nothing extra
-- Revisit a dedicated tab if the feed grows large enough to crowd the Route page
+- `fun_facts` table (migration 0022): `trip_id`, optional `place_id`/`stop_id`, `source` (`wikipedia` | `manual`), `body`, `added_by` (nullable for API-sourced rows), `created_at`.
+- Wikipedia REST summary API (`/page/summary/{title}`) called server-side via `/api/fun-facts` — same free, keyless proxy pattern as Nominatim/oEmbed — keyed off each stop's `name` (used directly as the article title), fetched once and cached in the table rather than re-fetched per view. A 404 (no matching article) returns `{extract: null}`, a real expected outcome, not an error.
+- `useAutoFetchFunFacts` fires the fetch-and-cache once per stop that doesn't already have a wikipedia-sourced row, on Route page load.
+- Manual add form (`FunFactForm`) mirroring Tips' shape (text + optional place/stop link) for facts either of you write yourselves, via a "Add a fact" button opening a `Dialog`.
+- Feed (`FunFactsFeed`) surfaced on the Route page as a small rotating strip (a single `.card`, not the whole table) — reshuffles which cached fact is shown on every page load, and again every 15 minutes if the page stays open, via `useFunFacts`'s `refetchInterval`. The pick itself is `dataUpdatedAt % facts.length`, not `Math.random()` — React Compiler's purity rule blocks calling an impure function during render, and `dataUpdatedAt` (which changes on every fetch, including the 15-minute one) serves the same "reshuffle on refetch" job without needing an effect+setState round-trip.
+- Attribution text distinguishes source inline: "via Wikipedia" or "Shared by {name}" (resolved against `useTripMembers`) — no icon needed for this, per the acceptance criterion.
+- Revisit a dedicated tab if the feed grows large enough to crowd the Route page — not needed yet.
+
+**Real bug caught during live verification, not just typecheck/lint:** the client-side dedup guard (`useAutoFetchFunFacts`'s `useRef` set, meant to stop the same stop's fetch firing twice) isn't airtight — React's dev-mode StrictMode double-invokes effects on initial mount specifically to catch this class of bug, and it did: two wikipedia-sourced rows landed for the same stop on the same page load. Fixed with the actual source of truth, a partial unique index (`idx_fun_facts_wikipedia_per_stop` on `(stop_id) where source = 'wikipedia'`, migration 0023) plus swallowing the resulting `23505` unique-violation in the mutation the same way `push_subscriptions`' insert already does — confirmed via a clean re-run that exactly one row lands now.
 
 **Acceptance:** opening the trip shows at least one Wikipedia-sourced fact for a stop with a real city name; leaving the Route page open for 15 minutes rotates in a different fact without a manual refresh; a manually-added fact from either user appears in the same feed, visibly distinguished by source.
 

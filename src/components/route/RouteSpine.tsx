@@ -15,6 +15,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { StopCard } from "./StopCard";
 import { PlaceRow, isMutualMustGo } from "./PlaceRow";
 import { AddStopForm } from "./AddStopForm";
+import { FunFactsFeed } from "./FunFactsFeed";
 
 interface RouteSpineProps {
   tripId: string;
@@ -82,6 +83,8 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
           {trip.description && <p className="text-muted">{trip.description}</p>}
         </div>
       )}
+
+      <FunFactsFeed tripId={tripId} />
 
       {places.length === 0 && (
         <p className="text-muted">No places added yet.</p>

@@ -15,6 +15,7 @@ export type NotificationType =
   "consensus_reached" | "place_added" | "tip_added" | "vote_cast" |
   "arrival_estimated" | "packing_due" | "trip_joined";
 export type TripRole = "owner" | "member";
+export type FunFactSource = "wikipedia" | "manual";
 
 export interface Stop {
   id: string;
@@ -190,6 +191,19 @@ export interface InvitePreview {
   tip_count: number;
   inviter_name: string;
   is_valid: boolean;
+}
+
+export interface FunFact {
+  id: string;
+  trip_id: string;
+  place_id: string | null;
+  stop_id: string | null;
+  source: FunFactSource;
+  body: string;
+  // Null for wikipedia-sourced rows — nothing to attribute a keyless API
+  // lookup to.
+  added_by: string | null;
+  created_at: string;
 }
 
 export interface Notification {
