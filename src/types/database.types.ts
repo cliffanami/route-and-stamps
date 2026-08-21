@@ -101,6 +101,10 @@ export interface Profile {
   id: string;
   display_name: string;
   avatar_url: string | null;
+  // Which notification types the person wants as a real OS push while the
+  // app isn't open (migration 0020) — independent of is_instant, which
+  // only governs in-app digest-eligibility.
+  push_enabled_types: NotificationType[];
   created_at: string;
 }
 

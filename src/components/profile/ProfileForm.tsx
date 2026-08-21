@@ -5,13 +5,15 @@ import { PencilSimple } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useProfile, useUpdateProfile } from "@/lib/queries/use-profile";
+import { PushNotificationSettings } from "./PushNotificationSettings";
 import type { Profile } from "@/types/database.types";
 
 // Fills out the previously-orphaned Profile page (ROADMAP.md Milestone A).
-// Display name is the one field made editable — avatar/notification style
-// stay display-only for now: no upload flow and no notification-preference
-// column exist in schema.sql yet, so wiring either up is future scope, not
-// this milestone's.
+// Display name is the one field made editable — avatar stays display-only
+// (no upload flow exists). Notification settings (ROADMAP.md "Push
+// notifications") live in their own always-visible section below, not
+// gated behind display-name's edit mode — toggling a notification type
+// saves immediately, it isn't a form with a save/cancel cycle.
 export function ProfileForm() {
   const { data: profile, isLoading } = useProfile();
 
@@ -19,7 +21,12 @@ export function ProfileForm() {
     return <p className="text-muted">Loading…</p>;
   }
 
-  return <ProfileFieldsForm profile={profile} />;
+  return (
+    <div className="flex flex-col gap-6">
+      <ProfileFieldsForm profile={profile} />
+      <PushNotificationSettings profile={profile} />
+    </div>
+  );
 }
 
 // Read-only by default, same edit-mode-toggle convention as

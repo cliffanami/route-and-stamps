@@ -40,3 +40,43 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// ROADMAP.md "Push notifications" — the actual mechanism that reaches the
+// OS tray with the app closed. send-push (the Edge Function, migration
+// 0021's trigger) sends {title, body, url} as the push message body.
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  const { title, body, url } = event.data.json() as {
+    title: string;
+    body: string;
+    url: string;
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: "/icons/icon-192.png",
+      data: { url },
+    }),
+  );
+});
+
+// Focuses an already-open tab on the notification's target route rather
+// than always opening a new one — falls back to opening fresh if no
+// window is currently open.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data as { url?: string } | undefined)?.url ?? "/";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      const existing = clients.find((client) => "focus" in client);
+      if (existing) {
+        existing.navigate(url);
+        return existing.focus();
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
+});
