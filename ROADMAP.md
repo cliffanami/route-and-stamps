@@ -261,7 +261,7 @@ Also shipped, as a fast-follow once Settings existed: currency/tip-category/budg
 
 ---
 
-### G — AI chat assistant — scoped for real (2026-08-22)
+### G — AI chat assistant — shipped (2026-08-22)
 
 **Goal:** a conversational front-end over trip actions, addressing the form-fatigue feedback directly — builds on M1.5's existing Claude integration rather than opening a second AI surface. Text/caption input only: video and audio transcription is explicitly descoped to hold the $0/month rule, per explicit sign-off — revisit only if real usage shows it's worth paying for.
 
@@ -279,6 +279,8 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 - Killing the feature flag hides the chat icon entirely — every screen it could have written to still works unchanged through its existing form.
 
 **Acceptance:** asking the assistant to add a place from a pasted description shows a confirm card and creates a real place after one tap; asking what hasn't been voted on yet returns an accurate answer with no tool call visible; killing the feature flag reverts every screen to the existing forms with nothing broken.
+
+**Verification note:** no `ANTHROPIC_API_KEY` is configured yet (same starting state M1.5's extract-place shipped in), so the actual Claude round-trip — tool selection from real phrasing, confirm-card content from a real response — is unverified. What *is* confirmed live: the icon correctly renders only with `ENABLE_AI_CHAT=true` and is fully absent otherwise; opening/closing the dialog; and a missing-key request failing gracefully into an in-thread "not configured" message rather than a crash. Set the key + a Console spend cap, then verify a real conversation before relying on this for real.
 
 ---
 
