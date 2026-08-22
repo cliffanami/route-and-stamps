@@ -261,18 +261,24 @@ Also shipped, as a fast-follow once Settings existed: currency/tip-category/budg
 
 ---
 
-### G — AI chat assistant
+### G — AI chat assistant — scoped for real (2026-08-22)
 
 **Goal:** a conversational front-end over trip actions, addressing the form-fatigue feedback directly — builds on M1.5's existing Claude integration rather than opening a second AI surface. Text/caption input only: video and audio transcription is explicitly descoped to hold the $0/month rule, per explicit sign-off — revisit only if real usage shows it's worth paying for.
 
-Scoping below is a first pass, not final — by explicit call, this gets its own dedicated scoping session once E, F, H, and I are underway or done, rather than being locked in now alongside the smaller items.
+Dedicated scoping session held now that E, F, and H are shipped (I was dropped outright — not needed). Three decisions locked in:
 
-- Chat UI (new tab — flag if a persistent affordance elsewhere is preferred instead), backed by a Route Handler calling Claude with tool definitions for: add place, add tip, cast/change a vote, log a budget line, and read-only trip summaries ("what's unvoted," "how much have we spent")
-- Every tool call goes through the same Supabase client calls / RLS the manual forms already use — the assistant is a new trigger for existing mutations, not a parallel write path
-- Same M1.5 safety pattern: `ENABLE_AI_CHAT` toggle (default off), independent Anthropic Console spend cap, graceful "couldn't do that — try the form" fallback on any failure
-- Explicit confirmation step in the chat thread before any write-tool call executes — no silent mutations from a misread request
+- **Placement — a 4th top-nav icon, not a 7th bottom-nav tab.** Opens a chat overlay (built on the existing `Dialog` primitive, not a new drawer component) from any trip page, alongside Members/Bell/Settings — matches where the "form fatigue" actually happens (mid-task on whatever page you're already on), and a 7th bottom-nav icon would crowd mobile width for a feature with no usage data yet to justify a permanent, more insistent affordance like a FAB.
+- **Model — Sonnet, not Haiku.** M1.5's extract-place Route Handler uses Haiku for a single-field extraction task; this assistant has to pick the right tool from ambiguous multi-step phrasing, which is a meaningfully harder job. The existing Anthropic Console spend cap is the real cost backstop either way, not model choice — reusing it here, not a new one.
+- **Chat history — ephemeral, client-side only.** No `chat_messages` table, no realtime subscription, no cross-device continuity. The assistant is a UI layer over existing mutations, not a new data model — what it *does* persists normally (a real place, a real vote); the conversation that led there doesn't. Revisit as a real table only if losing history on refresh turns out to actually bother anyone.
 
-**Acceptance:** asking the assistant to add a place from a pasted description creates a real place after one confirmation step; asking what hasn't been voted on yet returns an accurate read-only summary; killing the feature flag reverts every screen to the existing forms with nothing broken.
+**Read-only summaries answered from context, not a second tool-calling round-trip.** The originally-sketched shape (separate read tools, server-executed, fed back to Claude mid-loop) was more machinery than a two-person trip's real data volume needs — the client already has places/votes/budget lines loaded for the page it's on. Instead: the system prompt is stuffed with a compact snapshot of current trip state (stops, places with vote tallies, the requesting user's own votes, budget lines) on every turn, and Claude answers "what's unvoted"/"how much have we spent" straight from that context as plain text — no tool call, no extra round-trip, same accuracy. Token cost is trivial at this app's real scale (dozens of places, not thousands) — same "the slop is acceptable for what this needs to do" standard already applied elsewhere.
+
+**Write actions stay genuinely two-step.** Four tools: `add_place`, `add_tip`, `cast_vote`, `log_budget_line`. A turn where Claude requests one of these returns the proposed action to the client *unexecuted* — rendered as an inline confirm card (human-readable summary + Confirm/Cancel) in the thread, same "no silent mutations from a misread request" rule as before. Confirming calls the exact same mutation hook (`useAddPlace`/`useAddTip`/`useCastVote`/`useAddBudgetLine`) the manual forms already use — the assistant is a new trigger, not a parallel write path. `add_place` reuses the existing `/api/geocode` proxy and `nearestStop()` client-side, same as `PlaceForm`; a geocode miss still allows confirming (place saves without a pin), matching `PlaceForm`'s own existing fallback. `add_tip`/`cast_vote`/`log_budget_line` resolve a place/stop mentioned by name against the trip's already-loaded lists (case-insensitive best match); no match just means the action proceeds unlinked, not a hard failure.
+
+- Same M1.5 safety pattern: `ENABLE_AI_CHAT` toggle (default off), the existing Anthropic Console spend cap (not a new independent one — one cap covers both AI surfaces), graceful "couldn't do that — try the form" fallback on any failure.
+- Killing the feature flag hides the chat icon entirely — every screen it could have written to still works unchanged through its existing form.
+
+**Acceptance:** asking the assistant to add a place from a pasted description shows a confirm card and creates a real place after one tap; asking what hasn't been voted on yet returns an accurate answer with no tool call visible; killing the feature flag reverts every screen to the existing forms with nothing broken.
 
 ---
 
