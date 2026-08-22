@@ -160,7 +160,7 @@ Regrouped once against a real implementation plan (superseding an earlier draft 
 
 ---
 
-### A — Settings split
+### A — Settings split — shipped
 
 **Goal:** stop settings from being scattered — budget-cap config currently lives as a panel bolted onto the Budget page (its own code comment already flags this as a placement gap), and `(app)/profile/page.tsx` exists but is orphaned — nothing in the app links to it.
 
@@ -174,7 +174,7 @@ Also shipped, as a fast-follow once Settings existed: currency/tip-category/budg
 
 ---
 
-### B — Pattern completeness (includes Web Share Target)
+### B — Pattern completeness (includes Web Share Target) — shipped
 
 **Goal:** five places where a pattern already exists but doesn't yet reach somewhere it should — plus Web Share Target, grouped in here rather than standalone since it's the same shape: extending something to a place it doesn't reach yet.
 
@@ -213,7 +213,7 @@ Also shipped, as a fast-follow once Settings existed: currency/tip-category/budg
 
 ---
 
-### D — Scheduling infrastructure (arrival estimates, packing reminders)
+### D — Scheduling infrastructure (arrival estimates, packing reminders) — shipped
 
 **Goal:** the first time-based (not event-based) notification mechanism this app has needed — every existing trigger fires on insert, not on a clock. Built once, reused by both features below. **Check-in intentionally excluded** — with explicit sign-off to defer it — so "Estimated arrival" ships as a complete, independently-testable unit now rather than waiting on a "Confirmed" contrast state that doesn't exist yet; check-in becomes its own fast-follow once this is live.
 
