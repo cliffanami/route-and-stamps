@@ -289,18 +289,6 @@ Scoping below is a first pass, not final — by explicit call, this gets its own
 
 ---
 
-### I — Visual place pin confirmation
-
-**Goal:** see and adjust a place's pin on the map before saving it, using the existing free Leaflet/CARTO map — not the Google Maps JS API or Places Autocomplete, both of which stay rejected per ARCHITECTURE.md §1's billing-account/offline-caching conflict.
-
-- Add Place form gains a small embedded map (reusing `MapView`) showing the Nominatim-geocoded pin
-- Draggable marker to adjust position before saving; saved lat/lng reflects any manual adjustment, not just Nominatim's raw result
-- No new external dependency — same tile layer, same keyless geocode call already in place
-
-**Acceptance:** adding a place shows its geocoded pin on an embedded map before saving; dragging the pin and saving persists the adjusted coordinates, not the original Nominatim result.
-
----
-
 ### J — Detail pages and pattern completeness, round two — shipped (2026-08-21)
 
 **Goal:** eight items folded in together — four surfaced by a self-audit against earlier work (a field or FK existed without the feature actually built around it, same shape as Milestone B's original "pattern completeness"), four new from actual usage of the real Japan trip data. Same discipline as every round before this: verified live against the database before writing anything, not assumed from a prior roadmap entry.
