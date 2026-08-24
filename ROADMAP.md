@@ -355,7 +355,74 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
+### M — Map polish
+
+**Goal:** three location-related gaps surfaced from actual use, scoped together since they're all "the map should get you where you're going with fewer taps."
+
+- **Tighter check-in zoom.** Milestone L's live-mode map zoomed to fit both the current stop *and* the next one, on the theory that seeing the line between them mattered. In practice that reads as still-zoomed-out — change `currentStopFromCheckins`'s bounds to the current stop alone (a tight, close-in zoom); the next-stop-and-date banner text already carries "what's coming," so the map itself doesn't need to stay wide enough to fit both pins.
+- **Stop markers become clickable.** Place markers' popups already link into Place Detail (`<Popup><Link href=.../>{place.name}</Link></Popup>`); stop markers' popups are still plain text (`<Popup>{stop.name}</Popup>`) — the one map-popup gap. Fix: wrap the stop name in the same `Link` pattern, into Stop Detail. Single click only — no double-click distinction; Stop Detail's existing Places tab (Milestone J) already is the "places within this stop" view double-click would have opened.
+- **Google Maps link on the Route page's place row, not just Place Detail.** `OpenInGoogleMapsLink` already renders on Place Detail and on every stop card — `PlaceRow` (the Route page's inline place list) is the one place-facing spot that doesn't have it yet. Add it there too, matching the pattern already established everywhere else.
+
+**Acceptance:** checking into a stop zooms the map in close on that stop alone; tapping a stop's map marker navigates to Stop Detail, same as a place marker already does; a place's Google Maps link is reachable from the Route page without opening Place Detail first.
+
+---
+
+### N — Responsive touch targets
+
+**Goal:** button sizing was tuned without a narrow-viewport budget-Android device in the loop — surfaced on a Tecno Spark Go 2024 (a genuinely narrower CSS viewport than the iPhone-class widths this app has mostly been eyeballed against so far), where `.btn`'s current padding/sizing reads as oversized and cramped.
+
+- Audit Broadsheet's `.btn` padding and any fixed-px sizing against a real narrow-viewport breakpoint (roughly 320–360px CSS width, not just the 390px+ iPhone range already implicitly assumed) — likely a `clamp()` or a narrow-viewport media query on padding/font-size rather than a wholesale redesign, since the goal is "scales smoothly," not "looks different."
+- Spot-check the densest button rows in the app (Stop Detail's Overview action row, DetailTabs' segmented control + add button, BottomNav's six icons) specifically, since those are where several buttons compete for the same narrow width at once.
+- Not a new component or design-system token — a sizing fix within Broadsheet's existing `.btn` class, so every button in the app benefits without a per-component change.
+
+**Acceptance:** on a ~360px-or-narrower viewport, button rows that currently crowd or overflow fit comfortably without text wrapping or overlapping; nothing changes visually on a normal-width phone or desktop.
+
+---
+
+### O — Rich text editor for Stop description and Place notes
+
+**Goal:** these two fields are the app's longest free-form text (a stop's day-by-day narrative, a place's note) and are plain `<textarea>`s today — line breaks entered while typing don't reliably survive redisplay. Scoped to exactly these two fields, not every textarea in the app (tip content stays plain — shorter, less narrative in practice).
+
+- A lightweight, free rich-text editor — no paid tier, no server-side rendering dependency (matches every other cost-consciousness call already made in this app). A minimal contentEditable-based library (e.g. Tiptap's free core) rather than a heavier suite is the likely fit; exact library choice is an implementation detail to confirm at build time, not a decision to lock in the scoping pass.
+- **Storage format decision needed before building**: HTML (richer, but needs sanitizing before ever rendering user-authored HTML back — a real XSS surface if skipped) vs. a constrained Markdown subset (safer by construction, slightly more work to render nicely). Flag this explicitly at build time rather than defaulting silently, per this project's own "don't silently guess" rule for anything with a security dimension.
+- `stops.description` and `places.note` both go from `text` to whatever the chosen format is — existing plain-text values remain valid content either way (plain text is valid Markdown, and valid-if-escaped HTML), so no migration/backfill needed, just a display-and-edit path change.
+- Splitting the day-by-day narrative (`splitDayNarrative`, Milestone J) still needs to work against the new format — confirm it still finds `Day N —` boundaries correctly once the field can contain rich formatting around them.
+
+**Acceptance:** typing a line break in a stop's description or a place's note and saving preserves it on redisplay; basic formatting (whatever the chosen editor supports — likely at minimum bold/italic/lists) round-trips through save and reload without corruption; the day-by-day split still works on a formatted description.
+
+---
+
+### P — Tips, extended (video captions, tags, Questions, Phrasebook)
+
+**Goal:** four small extensions to the existing Tips model, none requiring a new table — "Tips" keeps its name (the category chips already do the work of signaling what's inside; a broader relabel was considered and explicitly declined) but now covers destination advice, open questions, and phrasebook entries, all through the same shape.
+
+- **Video tip caption.** Video-format tips currently have no free-text field at all (`content_text` only applies to `format: "text"`) — add an optional caption/description alongside the link, so a video tip can carry a "why I saved this" note the same way a text tip already can.
+- **Tags on tips.** A free-text array field, additive — not the same as `category` (category is the existing strict-select single grouping; tags are open-ended, a tip can carry more than one). Filtering/search UI against tags is a fast-follow once tags exist, not required for the first cut.
+- **"Question" as a tip category** — no schema change, `category` is already free text. Seed it into the suggested/default `tip_categories` list so it's available without someone having to type it in cold. A question like "do we need a SIM or wifi" is just a tip whose category happens to be "Question" — same add-a-tip flow, same optional place/stop link (usually left unset, since a question is rarely about one specific place).
+- **"Phrasebook" as a tip category**, same mechanism — also seeded into the default category list. A phrasebook entry is a tip whose `content_text` holds one phrase pair by convention (e.g. "Thank you — Arigatou gozaimasu"), not a new `english_phrase`/`translated_phrase` column pair — avoids a schema special-case for one category. Deliberately never tagged to a place or stop (a phrase isn't about one specific spot).
+- **Manual starter phrases, not AI-generated.** Once Phrasebook exists as a category, seed a real trip's phrasebook with an initial batch of phrases for its destination language by hand (I can help draft the list; entering it is the same add-a-tip flow, just done once up front) — not a Claude call inferring the destination and generating phrases automatically, which would add a new AI surface and real per-trip cost for something a one-time manual pass covers just as well.
+
+**Acceptance:** a video tip can carry a caption alongside its link; a tip can have more than one tag; "Question" and "Phrasebook" appear as selectable categories without a trip needing to add them manually first; a newly-seeded trip's Tips page shows an initial set of phrasebook entries for its destination language.
+
+---
+
+### Q — Packing categories, configured
+
+**Goal:** packing items already group by `category` (a plain free-text field, `PackingMatrix` groups by first-seen order) — the "sections" ask (pre-trip / trip packing list / on-trip items like an eSIM or gifts) is already achievable today by typing those as category values. What's actually missing is a *picker*, not a new grouping mechanism — free text invites drift ("Pre-trip" vs. "pre trip" fragmenting the grouping silently).
+
+- A `packing_categories` array on `trips`, same shape as the already-shipped `currencies`/`tip_categories`/`budget_categories` (Milestone A's fast-follow) — editable via the same `TagListEditor` in Trip Settings' "Currencies & categories" section.
+- `PackingForm`'s category field becomes a `<select>` sourced from that list, same strict-select pattern every other categorized field in the app already uses, with the same "keep a legacy value selectable if it's not in the current list" defensive handling.
+- Seed new trips with a sensible starter list — "Pre-trip", "Packing list", "On-trip" — rather than an empty array, so the picker isn't blank on day one.
+
+**Acceptance:** adding a packing item offers a category dropdown instead of free text; a new trip's packing categories start pre-populated with the three starter sections; existing free-text category values on already-seeded items keep working (shown as a legacy option, not silently dropped).
+
+---
+
 ### Deferred — not scoped yet
+
+**Dashboard / trip-list layer.** The layer above a single trip — a landing page listing every trip you're in, search, and stat cards (trips planned/done/upcoming to start, later km covered and who you traveled with). Genuinely doesn't exist today: `/trips` just grabs your first trip and redirects straight into it, no list view at all. This is the concrete first slice of the "Multi-trip accounts" line already sitting in Beyond M9 below — explicit call to give it its own dedicated scoping session (same treatment Milestone G got) rather than sketch it in passing alongside smaller items.
+
+**Instagram oEmbed access token.** `INSTAGRAM_OEMBED_ACCESS_TOKEN` is unset — TikTok video embeds already play inline (keyless), Instagram links currently fall back to "no embed available" until this is set. Requires registering a Meta Developer app and generating a token, an external account-setup step on your end, not app work to schedule — flagged here so it isn't mistaken for a bug once noticed again.
 
 **Other-person live location.** A different, bigger, consent-sensitive feature from the already-planned foreground-only self-position pin — needs its own explicit opt-in, likely its own table, and a retention/staleness story. Not scoped until there's an answer on whether it's wanted at all.
 
