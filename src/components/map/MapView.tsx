@@ -45,21 +45,25 @@ export function MapView({ tripId }: MapViewProps) {
   }
 
   // "The trip is on" (ROADMAP.md "Check-in") — once anyone's checked into
-  // a stop, the map opens focused there instead of fit-to-whole-route,
-  // with a small "here now / next up" banner. No checkins yet (trip
-  // hasn't started, from the app's point of view) keeps today's
-  // full-route view unchanged.
+  // a stop, the map opens zoomed in close on that stop alone (Milestone M
+  // tightened this from "fit both the current and next stop" — the
+  // banner text below already carries "what's coming", so the map itself
+  // doesn't need to stay wide enough to fit two pins). No checkins yet
+  // (trip hasn't started, from the app's point of view) keeps today's
+  // full-route fit-to-bounds view unchanged.
   const currentStop = currentStopFromCheckins(stops, checkins);
   const nextStop = currentStop ? nextStopAfter(stops, currentStop) : null;
 
-  const bounds = currentStop
-    ? L.latLngBounds(
-        (nextStop ? [currentStop, nextStop] : [currentStop]).map((stop) => [
-          stop.lat,
-          stop.lng,
-        ]),
-      )
-    : L.latLngBounds(stops.map((stop) => [stop.lat, stop.lng]));
+  // A single point has no "size" to fit bounds to — Leaflet would just
+  // snap to its max zoom (street-level, losing all context). center+zoom
+  // at a fixed, deliberate "town/neighborhood" level instead.
+  const CURRENT_STOP_ZOOM = 14;
+  const viewProps = currentStop
+    ? { center: [currentStop.lat, currentStop.lng] as [number, number], zoom: CURRENT_STOP_ZOOM }
+    : {
+        bounds: L.latLngBounds(stops.map((stop) => [stop.lat, stop.lng])),
+        boundsOptions: { padding: [32, 32] as [number, number] },
+      };
   const locatedPlaces = places.filter(
     (place) => place.lat !== null && place.lng !== null,
   );
@@ -124,11 +128,15 @@ export function MapView({ tripId }: MapViewProps) {
           reserves clearance so scrolled content isn't hidden behind the
           fixed nav. */}
       <div style={{ height: "70dvh" }}>
-        <MapContainer
-          bounds={bounds}
-          boundsOptions={{ padding: [32, 32] }}
-          className="h-full w-full"
-        >
+        {/* react-leaflet's MapContainer only reads bounds/center/zoom at
+            construction time — it doesn't re-apply them on a later
+            re-render. useStopCheckins resolves a moment after first
+            paint (starting from an empty default), so without a key
+            forcing a fresh mount once currentStop is known, the map
+            would silently stay on its initial fit-to-bounds view even
+            after check-in data arrives, while the banner text (a plain
+            React re-render) updates fine regardless. */}
+        <MapContainer key={currentStop?.id ?? "full-trip"} {...viewProps} className="h-full w-full">
           <TileLayer
             url={TILE_LAYER_URL}
             subdomains={TILE_LAYER_SUBDOMAINS}
@@ -149,7 +157,9 @@ export function MapView({ tripId }: MapViewProps) {
 
           {stops.map((stop) => (
             <Marker key={stop.id} position={[stop.lat, stop.lng]} icon={stopIcon}>
-              <Popup>{stop.name}</Popup>
+              <Popup>
+                <Link href={`/trips/${tripId}/stops/${stop.id}`}>{stop.name}</Link>
+              </Popup>
             </Marker>
           ))}
 

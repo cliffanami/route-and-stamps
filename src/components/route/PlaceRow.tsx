@@ -5,6 +5,7 @@ import { Card, CardTitle, CardBody, CardMeta } from "@/components/ui/Card";
 import { Tag } from "@/components/ui/Tag";
 import { VoteScale, VOTE_LEVEL_LABEL } from "@/components/places/VoteScale";
 import { MEAL_TAG_LABEL } from "@/components/places/MealTagPicker";
+import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { useCastVote } from "@/lib/queries/use-votes";
 import type { TripMember } from "@/lib/queries/use-trip-members";
 import type { Place, Vote } from "@/types/database.types";
@@ -70,6 +71,9 @@ export function PlaceRow({
           {MEAL_TAG_LABEL[tag]}
         </Tag>
       ))}
+      {place.lat !== null && place.lng !== null && (
+        <OpenInGoogleMapsLink lat={place.lat} lng={place.lng} />
+      )}
       <VoteScale
         value={myVote}
         onChange={(level) => castVote.mutate({ placeId: place.id, level })}
