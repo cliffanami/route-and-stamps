@@ -278,6 +278,18 @@ figcaption {
 .btn-icon { width: 36px; height: 36px; padding: 0; }
 .btn-block { width: 100%; margin-top: var(--space-2); }
 
+/* Budget-Android CSS viewports (e.g. Tecno Spark Go 2024) run narrower than
+   the 390px+ iPhone-class widths this system was mostly eyeballed against —
+   .btn/.seg-opt padding and .nav's gap (sized for a handful of top-nav
+   icons, not a 6-item BottomNav) both crowd or clip at that width.
+   Scales the same classes down rather than introducing narrow-only
+   variants. */
+@media (max-width: 380px) {
+  .btn { padding: 8px 12px; font-size: 13px; }
+  .btn-icon { width: 32px; height: 32px; }
+  .seg-opt { padding: 6px 8px; font-size: 12px; }
+}
+
 /* — forms — */
 .field > label {
   display: block; font-size: 12px; margin-bottom: 5px;
@@ -365,6 +377,9 @@ textarea.input { min-height: 90px; resize: vertical; }
 }
 .nav a { color: inherit; text-decoration: none; font-size: 14px; }
 .nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
+@media (max-width: 380px) {
+  .nav { gap: var(--space-2); padding: var(--space-2) var(--space-3); }
+}
 
 /* — tables — */
 .table { width: 100%; border-collapse: collapse; font-size: 14px; }

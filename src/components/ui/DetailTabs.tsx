@@ -32,7 +32,7 @@ export function DetailTabs({ tabs, defaultTab }: DetailTabsProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="seg" role="radiogroup" aria-label="Section">
           {tabs.map((tab) => (
             <label key={tab.key} className="seg-opt">

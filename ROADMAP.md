@@ -382,15 +382,16 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
-### N — Responsive touch targets
+### N — Responsive touch targets — shipped (2026-08-24)
 
 **Goal:** button sizing was tuned without a narrow-viewport budget-Android device in the loop — surfaced on a Tecno Spark Go 2024 (a genuinely narrower CSS viewport than the iPhone-class widths this app has mostly been eyeballed against so far), where `.btn`'s current padding/sizing reads as oversized and cramped.
 
-- Audit Broadsheet's `.btn` padding and any fixed-px sizing against a real narrow-viewport breakpoint (roughly 320–360px CSS width, not just the 390px+ iPhone range already implicitly assumed) — likely a `clamp()` or a narrow-viewport media query on padding/font-size rather than a wholesale redesign, since the goal is "scales smoothly," not "looks different."
-- Spot-check the densest button rows in the app (Stop Detail's Overview action row, DetailTabs' segmented control + add button, BottomNav's six icons) specifically, since those are where several buttons compete for the same narrow width at once.
-- Not a new component or design-system token — a sizing fix within Broadsheet's existing `.btn` class, so every button in the app benefits without a per-component change.
+- **Confirmed with real measurements, not just eyeballing**: at 320–360px CSS width, Stop Detail's Tips/Costs tabs clipped the segmented control (`.seg`'s own `overflow: hidden` silently ate whichever tab didn't fit next to the "Add a tip"/"Log a cost" button) and BottomNav's six labels overflowed and clipped ("Route" → "oute", "Packing" → "Pack") — exactly the "oversized and cramped" read reported from the device, not a false alarm.
+- `@media (max-width: 380px)` narrow-viewport overrides on `.btn` (padding 10px/18px → 8px/12px, font-size 14px → 13px), `.btn-icon` (36px → 32px square), `.seg-opt` (padding 7px/12px → 6px/8px, font-size 13px → 12px), and `.nav` (gap 20px → 10px, padding 15px/20px → 10px/15px) — sizing tokens tuned within Broadsheet's existing classes, not a new component or breakpoint-specific variant.
+- `DetailTabs`' header row gained `flex-wrap` (Tailwind, layout-only per CONVENTIONS.md §1) so the "Add" button drops to its own line if the segmented control still doesn't have room, rather than relying on the media query alone to hit the right breakpoint for every current and future tab label — a robust fallback instead of a guessed exact width.
+- **Real bug caught while verifying, not just in the diff**: the first `.nav` narrow-viewport rule was written *before* `.nav`'s own base rule in the stylesheet — with equal specificity, CSS's cascade lets a later unconditional rule beat an earlier conditional one regardless of whether the media query matches, so the override was silently dead on arrival. `.btn`/`.seg-opt` happened to work because those overrides already sat after their base rules; `.nav` didn't. Caught by checking `getComputedStyle` directly rather than trusting that "the CSS file has the right text" meant it was taking effect — moving the `.nav` override to after its base rule fixed it. Worth remembering for any future Broadsheet override: source order after the base rule, not just "somewhere in a media query."
 
-**Acceptance:** on a ~360px-or-narrower viewport, button rows that currently crowd or overflow fit comfortably without text wrapping or overlapping; nothing changes visually on a normal-width phone or desktop.
+**Acceptance:** on a 320–360px viewport, Stop Detail's Tips/Costs tabs and BottomNav's six labels render with zero horizontal overflow (`scrollWidth === clientWidth`, confirmed via Playwright at both 320px and 360px); nothing changes visually at normal phone/desktop widths (confirmed at 430px).
 
 ---
 
