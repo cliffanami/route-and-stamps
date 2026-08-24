@@ -20,11 +20,13 @@ import { StopLogisticsForm } from "./StopLogisticsForm";
 import { CheckInControl } from "./CheckInControl";
 import { LocationMapLoader } from "@/components/map/LocationMapLoader";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
+import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
 import { useStop, useDeleteStop } from "@/lib/queries/use-stops";
 import { usePlaces } from "@/lib/queries/use-places";
 import { useTips, useDeleteTip } from "@/lib/queries/use-tips";
 import { useBudgetLines, useDeleteBudgetLine } from "@/lib/queries/use-budget-lines";
 import { useStopCheckins } from "@/lib/queries/use-stop-checkins";
+import { usePlaceCheckins } from "@/lib/queries/use-place-checkins";
 import { useTrip } from "@/lib/queries/use-trip";
 import { splitDayNarrative } from "@/lib/text/split-day-narrative";
 import type { Tip, BudgetLine } from "@/types/database.types";
@@ -50,6 +52,7 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
   const { data: tips = [] } = useTips(tripId);
   const { data: budgetLines = [] } = useBudgetLines(tripId);
   const { data: checkins = [] } = useStopCheckins(tripId);
+  const { data: placeCheckins = [] } = usePlaceCheckins(tripId);
   const deleteStop = useDeleteStop(tripId);
   const deleteTip = useDeleteTip(tripId);
   const deleteCost = useDeleteBudgetLine(tripId);
@@ -263,8 +266,27 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
     </div>
   );
 
+  // Located places only — a place can be saved without a pin, and the
+  // map (unlike the plain list below) has no way to plot one.
+  const locatedStopPlaces = stopPlaces.filter(
+    (place): place is typeof place & { lat: number; lng: number } =>
+      place.lat !== null && place.lng !== null,
+  );
+
   const placesContent = (
     <div className="flex flex-col gap-3">
+      {/* "Appreciate the distance between places" — the same StopAreaMap
+          StopCard already shows on the Route page, now also here so it
+          doesn't only exist behind the expand caret. */}
+      {locatedStopPlaces.length > 0 && (
+        <StopAreaMapLoader
+          tripId={tripId}
+          stop={stop}
+          places={locatedStopPlaces}
+          placeCheckins={placeCheckins}
+        />
+      )}
+
       {stopPlaces.length === 0 ? (
         <p className="text-muted">No places at this stop yet.</p>
       ) : (
@@ -285,6 +307,9 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
                   ))}
                 </div>
               </CardMeta>
+            )}
+            {place.lat !== null && place.lng !== null && (
+              <OpenInGoogleMapsLink lat={place.lat} lng={place.lng} />
             )}
           </Card>
         ))

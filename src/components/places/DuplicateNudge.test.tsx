@@ -20,7 +20,6 @@ function makePlace(overrides: Partial<Place>): Place {
     meal_tags: [],
     is_accommodation: false,
     needs_name: false,
-    visited_at: null,
     added_by: "user-1",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

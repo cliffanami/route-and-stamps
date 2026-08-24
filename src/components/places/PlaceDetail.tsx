@@ -16,6 +16,8 @@ import { VoteScale, VOTE_LEVEL_LABEL } from "./VoteScale";
 import { MEAL_TAG_LABEL } from "./MealTagPicker";
 import { LocationMapLoader } from "@/components/map/LocationMapLoader";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
+import { PlaceVisitedControl } from "./PlaceVisitedControl";
+import { usePlaceCheckins } from "@/lib/queries/use-place-checkins";
 import { BudgetForm } from "@/components/budget/BudgetForm";
 import { CostLineRow } from "@/components/budget/CostLineRow";
 import { TipCard } from "@/components/tips/TipCard";
@@ -90,6 +92,7 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const { data: budgetLines = [] } = useBudgetLines(tripId);
   const { data: tips = [] } = useTips(tripId);
   const { data: trip } = useTrip(tripId);
+  const { data: placeCheckins = [] } = usePlaceCheckins(tripId);
 
   if (isLoading) return <p className="px-6 py-4 text-muted">Loading…</p>;
   if (!place) return <p className="px-6 py-4 text-muted">Place not found.</p>;
@@ -248,6 +251,8 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
           <OpenInGoogleMapsLink lat={place.lat} lng={place.lng} />
         </div>
       )}
+
+      <PlaceVisitedControl tripId={tripId} place={place} checkins={placeCheckins} />
 
       <MediaSlider
         photoPath={place.photo_url}

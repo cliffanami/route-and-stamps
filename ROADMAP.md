@@ -368,6 +368,20 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
+### Places, extended — shipped (2026-08-24)
+
+**Goal:** three place-level gaps scoped live in conversation — places had no way to see the distance between them at a glance, no direct link out to Google Maps, and no way to mark one as actually visited, unlike stops which already had all three via Milestone L/M.
+
+- `place_checkins` table (`place_id, user_id, checked_in_at`, composite PK, migration 0026), modeled exactly like `stop_checkins` — one row per person per place, toggled by delete-if-present/insert-if-absent, not a status flag. Replaces the old unused `places.visited_at` column (dropped in the same migration), which was never wired to anything.
+- **Mark-as-visited lives on Place Detail only**, not inline on every place card in the Route page or Stop Detail lists — visiting is a deliberate check, not a side effect of glancing at a list. No notification fires on visiting a place, unlike a stop check-in: a trip can have dozens of places, and "ticked one place off the list" is a different order of event from "confirmed arrival somewhere new."
+- **Visited places render dimmed on every map that shows them** (main trip Map, and the stop-scoped mini-map on both the Route page's expanded stop card and Stop Detail's Places tab) — `circleIcon()` gained an `opacity` parameter (0.4 visited, 1 unvisited), a third independent visual axis alongside the existing filled-vs-outlined (stop-vs-place) and size distinctions, rather than reusing either — two accent-driven visual meanings on one marker would collide (CONVENTIONS.md §5b).
+- **Stop Detail's Places tab now opens with the stop-area map** (previously only reachable via the Route page's expand-caret) showing the stop plus its located places with tooltip links — so two places can be compared for walking distance without leaving the stop's own page. Unlocated places (no lat/lng) are excluded from the map but still listed below it.
+- **Per-place Google Maps link** added to each place card in Stop Detail's Places tab, guarded on `lat`/`lng` both being non-null — the one remaining place-facing spot missing the link `OpenInGoogleMapsLink` already had everywhere else (Place Detail, stop cards, Route page's `PlaceRow`).
+
+**Acceptance:** a place's Detail page shows who's checked in and lets any trip member toggle it; a visited place's marker reads visibly dimmer than an unvisited one everywhere markers appear; Stop Detail's Places tab shows a map of that stop's places and a Google Maps link per place.
+
+---
+
 ### N — Responsive touch targets
 
 **Goal:** button sizing was tuned without a narrow-viewport budget-Android device in the loop — surfaced on a Tecno Spark Go 2024 (a genuinely narrower CSS viewport than the iPhone-class widths this app has mostly been eyeballed against so far), where `.btn`'s current padding/sizing reads as oversized and cramped.

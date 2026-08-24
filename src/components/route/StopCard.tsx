@@ -7,7 +7,7 @@ import { Tag } from "@/components/ui/Tag";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
 import { CheckInControl } from "./CheckInControl";
-import type { Place, Stop, StopCheckin } from "@/types/database.types";
+import type { Place, PlaceCheckin, Stop, StopCheckin } from "@/types/database.types";
 
 interface StopCardProps {
   tripId: string;
@@ -15,6 +15,7 @@ interface StopCardProps {
   places: Place[];
   consensusCount: number;
   checkins: StopCheckin[];
+  placeCheckins: PlaceCheckin[];
   children: ReactNode;
 }
 
@@ -33,6 +34,7 @@ export function StopCard({
   places,
   consensusCount,
   checkins,
+  placeCheckins,
   children,
 }: StopCardProps) {
   const [expanded, setExpanded] = useState(false);
@@ -107,7 +109,12 @@ export function StopCard({
       {expanded && (
         <>
           {locatedPlaces.length > 0 && (
-            <StopAreaMapLoader tripId={tripId} stop={stop} places={locatedPlaces} />
+            <StopAreaMapLoader
+              tripId={tripId}
+              stop={stop}
+              places={locatedPlaces}
+              placeCheckins={placeCheckins}
+            />
           )}
           <div className="flex flex-col gap-3">{children}</div>
         </>

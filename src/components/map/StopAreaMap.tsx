@@ -6,22 +6,25 @@ import L from "leaflet";
 import Link from "next/link";
 import { circleIcon } from "./circle-icon";
 import { TILE_LAYER_URL, TILE_LAYER_SUBDOMAINS, TILE_LAYER_ATTRIBUTION } from "./tile-layer-config";
-import type { Place, Stop } from "@/types/database.types";
+import type { Place, PlaceCheckin, Stop } from "@/types/database.types";
 
 interface StopAreaMapProps {
   tripId: string;
   stop: Stop;
   places: Place[];
+  placeCheckins?: PlaceCheckin[];
 }
 
 // "The plot of all places around the city/town" — a stop-scoped map, not
 // the full-trip MapView. Same marker language (filled = stop, outlined =
-// place) and CARTO tiles, just bounded to one stop's area instead of the
-// whole itinerary.
+// place, dimmed = visited) and CARTO tiles, just bounded to one stop's
+// area instead of the whole itinerary.
 const stopIcon = circleIcon(16, true);
 const placeIcon = circleIcon(12, false);
+const visitedPlaceIcon = circleIcon(12, false, 0.4);
 
-export function StopAreaMap({ tripId, stop, places }: StopAreaMapProps) {
+export function StopAreaMap({ tripId, stop, places, placeCheckins = [] }: StopAreaMapProps) {
+  const visitedPlaceIds = new Set(placeCheckins.map((c) => c.place_id));
   const bounds = L.latLngBounds([
     [stop.lat, stop.lng],
     ...places.map((place): [number, number] => [place.lat!, place.lng!]),
@@ -49,7 +52,7 @@ export function StopAreaMap({ tripId, stop, places }: StopAreaMapProps) {
           <Marker
             key={place.id}
             position={[place.lat!, place.lng!]}
-            icon={placeIcon}
+            icon={visitedPlaceIds.has(place.id) ? visitedPlaceIcon : placeIcon}
           >
             <Popup>
               <Link href={`/trips/${tripId}/places/${place.id}`}>

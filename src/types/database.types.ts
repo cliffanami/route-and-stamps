@@ -85,7 +85,6 @@ export interface Place {
   meal_tags: MealTag[];
   is_accommodation: boolean;
   needs_name: boolean;
-  visited_at: string | null;
   added_by: string;
   created_at: string;
   updated_at: string;
@@ -198,6 +197,16 @@ export interface InvitePreview {
 // confirm independently.
 export interface StopCheckin {
   stop_id: string;
+  user_id: string;
+  checked_in_at: string;
+}
+
+// One row per (place, person) who's marked it visited — modeled exactly
+// like StopCheckin, not the single dropped visited_at timestamp it
+// replaces (that column tracked "has this been visited" with no sense of
+// who, and was never actually wired to any mutation or UI).
+export interface PlaceCheckin {
+  place_id: string;
   user_id: string;
   checked_in_at: string;
 }

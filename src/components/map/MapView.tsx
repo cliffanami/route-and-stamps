@@ -8,6 +8,7 @@ import { useStops } from "@/lib/queries/use-stops";
 import { usePlaces } from "@/lib/queries/use-places";
 import { useTrip } from "@/lib/queries/use-trip";
 import { useStopCheckins } from "@/lib/queries/use-stop-checkins";
+import { usePlaceCheckins } from "@/lib/queries/use-place-checkins";
 import { sortStopsByDate } from "@/lib/geo/sort-stops-by-date";
 import { currentStopFromCheckins, nextStopAfter } from "@/lib/geo/current-stop";
 import { CurrentPositionMarker } from "./CurrentPositionMarker";
@@ -29,12 +30,17 @@ interface MapViewProps {
 // visible at once is exactly that component).
 const stopIcon = circleIcon(16, true);
 const placeIcon = circleIcon(12, false);
+// Visited (ROADMAP.md "Places, extended") dims via opacity rather than a
+// third fill treatment — visually "done, deprioritized" the way a
+// checked-off list item reads, not a different marker type.
+const visitedPlaceIcon = circleIcon(12, false, 0.4);
 
 export function MapView({ tripId }: MapViewProps) {
   const { data: stops = [], isLoading: stopsLoading } = useStops(tripId);
   const { data: places = [] } = usePlaces(tripId);
   const { data: trip } = useTrip(tripId);
   const { data: checkins = [] } = useStopCheckins(tripId);
+  const { data: placeCheckins = [] } = usePlaceCheckins(tripId);
 
   if (stopsLoading) {
     return <p className="px-6 py-4 text-muted">Loading…</p>;
@@ -67,6 +73,7 @@ export function MapView({ tripId }: MapViewProps) {
   const locatedPlaces = places.filter(
     (place) => place.lat !== null && place.lng !== null,
   );
+  const visitedPlaceIds = new Set(placeCheckins.map((c) => c.place_id));
 
   // Same ordering rule the Route page uses (ROADMAP.md Milestone C's
   // date-based-ordering pivot) — one segment per consecutive stop pair,
@@ -167,7 +174,7 @@ export function MapView({ tripId }: MapViewProps) {
             <Marker
               key={place.id}
               position={[place.lat!, place.lng!]}
-              icon={placeIcon}
+              icon={visitedPlaceIds.has(place.id) ? visitedPlaceIcon : placeIcon}
             >
               <Popup>
                 <Link href={`/trips/${tripId}/places/${place.id}`}>
