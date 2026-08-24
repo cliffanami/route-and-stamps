@@ -23,7 +23,8 @@ type NotificationType =
   | "vote_cast"
   | "arrival_estimated"
   | "packing_due"
-  | "trip_joined";
+  | "trip_joined"
+  | "checked_in";
 
 interface PushRequestBody {
   notification_id: string;
@@ -76,6 +77,11 @@ const MESSAGE: Record<
     body: (p) =>
       p.joiner_name ? `${p.joiner_name} joined the trip` : `You joined ${p.trip_name ?? "the trip"}`,
     url: (tripId) => `/trips/${tripId}/members`,
+  },
+  checked_in: {
+    title: "Checked in",
+    body: (p) => `${p.checker_name ?? "Someone"} arrived in ${p.stop_name ?? "a stop"}`,
+    url: (tripId, p) => `/trips/${tripId}/stops/${p.stop_id}`,
   },
 };
 

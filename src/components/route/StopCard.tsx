@@ -6,13 +6,15 @@ import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { Tag } from "@/components/ui/Tag";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
-import type { Place, Stop } from "@/types/database.types";
+import { CheckInControl } from "./CheckInControl";
+import type { Place, Stop, StopCheckin } from "@/types/database.types";
 
 interface StopCardProps {
   tripId: string;
   stop: Stop;
   places: Place[];
   consensusCount: number;
+  checkins: StopCheckin[];
   children: ReactNode;
 }
 
@@ -30,6 +32,7 @@ export function StopCard({
   stop,
   places,
   consensusCount,
+  checkins,
   children,
 }: StopCardProps) {
   const [expanded, setExpanded] = useState(false);
@@ -92,6 +95,12 @@ export function StopCard({
             </p>
           )}
           <OpenInGoogleMapsLink lat={stop.lat} lng={stop.lng} />
+          <CheckInControl
+            tripId={tripId}
+            stop={stop}
+            checkins={checkins}
+            onCheckedIn={() => setExpanded(true)}
+          />
         </div>
       </div>
 

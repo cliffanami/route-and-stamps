@@ -340,9 +340,22 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
-### Deferred — not scoped yet
+### L — Check-in — shipped (2026-08-23)
 
-**Check-in.** Deferred with explicit sign-off (not an oversight) — ships as a fast-follow once Milestone D is live, adding a `stop_checkins` table (`stop_id, user_id, checked_in_at`, modeled like `votes` — one row per person, not a single per-stop flag) and a tap-to-confirm action that fires a real, non-estimated notification. Entirely foreground, entirely user-initiated — doesn't reopen the §4b location boundary, it's a manual signal, not tracking. This is also the point to add the "Estimated" vs. "Confirmed" status badge that Milestone D deliberately skips.
+**Goal:** a tap-to-confirm arrival signal, held back from Milestone D on purpose so "Estimated" vs. "Confirmed" would have a real contrast to show, not a badge that could only ever say one thing. Scoped in conversation, then extended live: check-in became the trigger for a broader "the trip is on" moment across the Route page, Stop Detail, and the Map, not just a badge and a notification.
+
+- **Entirely manual, never geolocation-triggered** — the same privacy line the existing current-position map pin already draws (foreground-only, never persisted). Auto-detecting arrival via geofencing would quietly cross that line even without meaning to; this stays a single deliberate tap, same spirit as a vote.
+- `stop_checkins` table (`stop_id, user_id, checked_in_at`, composite PK, migration 0025) — one row per person per stop, modeled exactly like `votes`, not a single per-stop flag. Tapping in when already checked in un-checks (delete-then-reinsert), same "nothing's a one-way door" pattern as a packing check or a budget status tag.
+- **Estimated → Confirmed badge** (`arrivalStatus()`, mirrors `check_scheduled_arrivals()`'s own "has the estimate passed" condition exactly): nothing before the estimated arrival time; **Estimated** once that time's passed with nobody checked in; **Confirmed** the moment anyone actually taps in. Shown next to the existing "Arriving {time}" text on both the Route page's stop card and Stop Detail's Overview — one shared `CheckInControl` component, not two implementations.
+- **Checking in surfaces "what's here"** rather than just recording a timestamp: on the Route page it auto-expands that stop's inline place list; on Stop Detail it jumps straight to the Places tab (a `key`-forced `DetailTabs` remount to `defaultTab="places"` — the existing Places tab from Milestone J, not a new duplicate view, since that already shows exactly what's planned there).
+- **"The trip is on" on the Map**: once anyone's checked into a stop, the map opens focused on that stop (plus the next one, chronologically) instead of fit-to-whole-trip, with a small banner — "You're in {stop} · Next: {stop} on {date}". The signal is shared trip-wide (the *latest* check-in by anyone, not per-viewer) — deliberately, since the whole point is a feeling both people get, not a personal view. No checkins yet means the map looks exactly like it always has.
+- New `checked_in` notification type (migration 0024, its own transaction per the mechanical `ALTER TYPE ADD VALUE` split) — a real, instant notification to the *other* trip members, distinct from `arrival_estimated`'s passive date-based guess that nobody's confirmed. Wired into the push-notification checklist too (defaults on for new profiles, same as the other `is_instant` types; existing profiles keep whatever they already have, not retroactively changed) and into `send-push`'s message map (redeployed).
+
+**Acceptance:** a stop past its estimated arrival with nobody checked in shows "Estimated"; the first tap-in on that stop switches it to "Confirmed" and notifies the other trip member instantly; checking in surfaces that stop's planned places without a separate navigation step; the map reflects wherever the trip currently is once anyone's checked in anywhere.
+
+---
+
+### Deferred — not scoped yet
 
 **Other-person live location.** A different, bigger, consent-sensitive feature from the already-planned foreground-only self-position pin — needs its own explicit opt-in, likely its own table, and a retention/staleness story. Not scoped until there's an answer on whether it's wanted at all.
 

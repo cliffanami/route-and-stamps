@@ -13,7 +13,7 @@ export type BudgetMode = "cap" | "tally";
 export type BudgetStatus = "not_booked" | "pending" | "paid";
 export type NotificationType =
   "consensus_reached" | "place_added" | "tip_added" | "vote_cast" |
-  "arrival_estimated" | "packing_due" | "trip_joined";
+  "arrival_estimated" | "packing_due" | "trip_joined" | "checked_in";
 export type TripRole = "owner" | "member";
 export type FunFactSource = "wikipedia" | "manual";
 
@@ -191,6 +191,15 @@ export interface InvitePreview {
   tip_count: number;
   inviter_name: string;
   is_valid: boolean;
+}
+
+// One row per (stop, person) who's checked in — modeled exactly like
+// Vote, not a single per-stop flag, since more than one person can
+// confirm independently.
+export interface StopCheckin {
+  stop_id: string;
+  user_id: string;
+  checked_in_at: string;
 }
 
 export interface FunFact {

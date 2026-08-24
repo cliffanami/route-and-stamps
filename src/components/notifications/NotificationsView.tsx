@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Bell,
   HandHeart,
+  HandWaving,
   MapPinPlus,
   Lightbulb,
   Clock,
@@ -72,6 +73,11 @@ const NOTIFICATION_META: Record<
         ? `${p.joiner_name} joined the trip`
         : `You joined ${p.trip_name}`,
     href: (tripId) => `/trips/${tripId}/members`,
+  },
+  checked_in: {
+    icon: HandWaving,
+    message: (p) => `${p.checker_name} arrived in ${p.stop_name}`,
+    href: (tripId, p) => `/trips/${tripId}/stops/${p.stop_id}`,
   },
 };
 

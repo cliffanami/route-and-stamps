@@ -17,12 +17,14 @@ import { TipForm } from "@/components/tips/TipForm";
 import { CostLineRow } from "@/components/budget/CostLineRow";
 import { BudgetForm } from "@/components/budget/BudgetForm";
 import { StopLogisticsForm } from "./StopLogisticsForm";
+import { CheckInControl } from "./CheckInControl";
 import { LocationMapLoader } from "@/components/map/LocationMapLoader";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { useStop, useDeleteStop } from "@/lib/queries/use-stops";
 import { usePlaces } from "@/lib/queries/use-places";
 import { useTips, useDeleteTip } from "@/lib/queries/use-tips";
 import { useBudgetLines, useDeleteBudgetLine } from "@/lib/queries/use-budget-lines";
+import { useStopCheckins } from "@/lib/queries/use-stop-checkins";
 import { useTrip } from "@/lib/queries/use-trip";
 import { splitDayNarrative } from "@/lib/text/split-day-narrative";
 import type { Tip, BudgetLine } from "@/types/database.types";
@@ -47,12 +49,17 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
   const { data: places = [] } = usePlaces(tripId);
   const { data: tips = [] } = useTips(tripId);
   const { data: budgetLines = [] } = useBudgetLines(tripId);
+  const { data: checkins = [] } = useStopCheckins(tripId);
   const deleteStop = useDeleteStop(tripId);
   const deleteTip = useDeleteTip(tripId);
   const deleteCost = useDeleteBudgetLine(tripId);
   const router = useRouter();
 
   const [editing, setEditing] = useState(false);
+  // Only read at DetailTabs' own mount (key change forces a remount) —
+  // checking in jumps straight to "what's planned here" once, but doesn't
+  // fight the user if they navigate elsewhere afterward.
+  const [defaultDetailTab, setDefaultDetailTab] = useState<"overview" | "places">("overview");
   const [confirmingDeleteStop, setConfirmingDeleteStop] = useState(false);
   const [deleteStopError, setDeleteStopError] = useState<string | null>(null);
   const [addingTip, setAddingTip] = useState(false);
@@ -189,6 +196,13 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
           )}
         </div>
       )}
+
+      <CheckInControl
+        tripId={tripId}
+        stop={stop}
+        checkins={checkins}
+        onCheckedIn={() => setDefaultDetailTab("places")}
+      />
 
       {(stop.transport_mode || stop.transport_detail || stop.departure_point || stop.arrival_point) && (
         <div className="flex flex-col gap-1">
@@ -341,6 +355,8 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
       {stop.town && <p className="text-muted">{stop.town}</p>}
 
       <DetailTabs
+        key={defaultDetailTab}
+        defaultTab={defaultDetailTab}
         tabs={[
           { key: "overview", label: "Overview", content: overviewContent },
           { key: "places", label: "Places", content: placesContent },
