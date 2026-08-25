@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useToast } from "@/components/ui/Toast";
 import { useUpdateStopLogistics } from "@/lib/queries/use-stops";
 import type { Stop, TransportCostStatus } from "@/types/database.types";
@@ -102,13 +103,11 @@ export function StopLogisticsForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="field">
         <label htmlFor="stop-description">Day-by-day notes (optional)</label>
-        <textarea
+        <RichTextEditor
           id="stop-description"
-          className="input"
-          rows={6}
           value={values.description}
-          onChange={(event) =>
-            setValues((current) => ({ ...current, description: event.target.value }))
+          onChange={(markdown) =>
+            setValues((current) => ({ ...current, description: markdown }))
           }
         />
       </div>

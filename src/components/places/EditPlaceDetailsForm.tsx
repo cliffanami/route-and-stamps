@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useToast } from "@/components/ui/Toast";
 import {
   LocationSearchField,
@@ -49,8 +50,8 @@ export function EditPlaceDetailsForm({
   const updatePlace = useUpdatePlace(tripId);
   const { showToast } = useToast();
   const {
-    register,
     handleSubmit,
+    control,
     formState: { isSubmitting },
   } = useForm<NoteValues>({
     resolver: zodResolver(noteSchema),
@@ -156,7 +157,13 @@ export function EditPlaceDetailsForm({
 
       <div className="field">
         <label htmlFor="edit-place-note">Note (optional)</label>
-        <textarea id="edit-place-note" className="input" {...register("note")} />
+        <Controller
+          name="note"
+          control={control}
+          render={({ field }) => (
+            <RichTextEditor id="edit-place-note" value={field.value ?? ""} onChange={field.onChange} />
+          )}
+        />
       </div>
 
       {error && <p className="text-muted">{error}</p>}

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { DuplicateNudge } from "./DuplicateNudge";
 import { MealTagPicker } from "./MealTagPicker";
 import { AccommodationToggle } from "./AccommodationToggle";
@@ -65,6 +66,7 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<DetailsValues>({
     resolver: zodResolver(detailsSchema),
@@ -263,7 +265,13 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
 
       <div className="field">
         <label htmlFor="note">Note (optional)</label>
-        <textarea id="note" className="input" {...register("note")} />
+        <Controller
+          name="note"
+          control={control}
+          render={({ field }) => (
+            <RichTextEditor id="note" value={field.value ?? ""} onChange={field.onChange} />
+          )}
+        />
       </div>
 
       <Button type="submit" variant="primary" disabled={isSubmitting}>

@@ -10,6 +10,7 @@ import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { Tag } from "@/components/ui/Tag";
 import { Card, CardTitle, CardMeta } from "@/components/ui/Card";
 import { DetailTabs } from "@/components/ui/DetailTabs";
+import { MarkdownText } from "@/components/ui/MarkdownText";
 import { MEAL_TAG_LABEL } from "@/components/places/MealTagPicker";
 import { TransportModeIcon } from "./transport-mode-icon";
 import { TipCard } from "@/components/tips/TipCard";
@@ -254,7 +255,7 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
         <div className="flex flex-col gap-2">
           <h2>Day by day</h2>
           {splitDayNarrative(stop.description).map((chunk, i) => (
-            <p key={i}>{chunk}</p>
+            <MarkdownText key={i} text={chunk} />
           ))}
         </div>
       )}

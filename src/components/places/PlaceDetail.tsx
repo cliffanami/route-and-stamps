@@ -8,6 +8,7 @@ import { Tag } from "@/components/ui/Tag";
 import { Dialog } from "@/components/ui/Dialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { DetailTabs } from "@/components/ui/DetailTabs";
+import { MarkdownText } from "@/components/ui/MarkdownText";
 import { MediaSlider } from "./MediaSlider";
 import { PhotoUpload } from "./PhotoUpload";
 import { EmbedLinkInput } from "./EmbedLinkInput";
@@ -219,7 +220,7 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
     <div className="flex flex-col gap-4">
       {place.town && <p className="text-muted">{place.town}</p>}
       {proposedBy && <p className="text-muted">Proposed by {proposedBy}</p>}
-      {place.note && <p>{place.note}</p>}
+      {place.note && <MarkdownText text={place.note} />}
 
       {consensus && <Tag variant="accent">Mutual must go</Tag>}
       {(place.is_accommodation || place.meal_tags.length > 0) && (
