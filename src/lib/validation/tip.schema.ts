@@ -10,6 +10,10 @@ export const tipSchema = z
   .object({
     category: z.string().trim().min(1, "Category is required").max(60),
     format: z.enum(["text", "video"]),
+    // Optional, applies to either format — content_text/video_caption stay
+    // the body, this is just a scannable heading above them (ROADMAP.md
+    // Milestone R).
+    title: z.string().trim().max(100).nullable(),
     content_text: z.string().trim().max(2000).nullable(),
     source_url: z.string().trim().url("Must be a valid URL").nullable(),
     embed_html: z.string().nullable(),

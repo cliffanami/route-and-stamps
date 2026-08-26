@@ -422,15 +422,94 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
-### Q — Packing categories, configured
+### Q — Packing page, redefined (categories, collapsible sections, item description)
 
-**Goal:** packing items already group by `category` (a plain free-text field, `PackingMatrix` groups by first-seen order) — the "sections" ask (pre-trip / trip packing list / on-trip items like an eSIM or gifts) is already achievable today by typing those as category values. What's actually missing is a *picker*, not a new grouping mechanism — free text invites drift ("Pre-trip" vs. "pre trip" fragmenting the grouping silently).
+**Goal:** three live-usage asks against the same `PackingMatrix`/`PackingForm` surface, merged into one milestone and internally sequenced rather than three separate passes over the same component — a category *picker* first (free text invites drift, "Pre-trip" vs. "pre trip" silently fragmenting the grouping), since collapsible sections are only worth building against a clean, deduped category list, not raw free text; then an optional item description as the third, independent piece.
 
-- A `packing_categories` array on `trips`, same shape as the already-shipped `currencies`/`tip_categories`/`budget_categories` (Milestone A's fast-follow) — editable via the same `TagListEditor` in Trip Settings' "Currencies & categories" section.
-- `PackingForm`'s category field becomes a `<select>` sourced from that list, same strict-select pattern every other categorized field in the app already uses, with the same "keep a legacy value selectable if it's not in the current list" defensive handling.
-- Seed new trips with a sensible starter list — "Pre-trip", "Packing list", "On-trip" — rather than an empty array, so the picker isn't blank on day one.
+1. **Category picker.** A `packing_categories` array on `trips`, same shape as the already-shipped `currencies`/`tip_categories`/`budget_categories` (Milestone A's fast-follow) — editable via the same `TagListEditor` in Trip Settings' "Currencies & categories" section. `PackingForm`'s category field becomes a `<select>` sourced from that list, same strict-select pattern every other categorized field in the app already uses, with the same "keep a legacy value selectable if it's not in the current list" defensive handling. New trips seed with a sensible starter list — "Pre-trip", "Packing list", "On-trip" — rather than an empty array, so the picker isn't blank on day one.
+2. **Collapsible sections**, built against that now-clean category list — each category section in `PackingMatrix` gets a collapse/expand toggle (chevron on the category heading), remembering collapsed state per category for the session (not persisted server-side — a per-viewer scroll convenience, not shared trip state). Default everything expanded on first load; collapsing is purely opt-in.
+3. **Item description.** New `packing_items.description text` column, optional, shown as muted secondary text under the item name in `PackingMatrix` and editable via a new field in `PackingForm` — independent of the other two, just landing in the same pass since it's the same page.
 
-**Acceptance:** adding a packing item offers a category dropdown instead of free text; a new trip's packing categories start pre-populated with the three starter sections; existing free-text category values on already-seeded items keep working (shown as a legacy option, not silently dropped).
+**Acceptance:** adding a packing item offers a category dropdown instead of free text; a new trip's packing categories start pre-populated with the three starter sections; existing free-text category values on already-seeded items keep working (shown as a legacy option, not silently dropped); clicking a category heading collapses/expands just that section, nothing collapsed by default; a packing item can carry an optional description, visible under its name in the matrix.
+
+---
+
+### R — Tip title field — shipped (2026-08-26)
+
+**Goal:** a text tip's `content_text` is both its heading and its body — no way to scan a list of tips at a glance without reading each one in full. Live-usage feedback: "description on tips."
+
+- New `tips.title text` column, optional. Shown as a small heading above `content_text`/`video_caption` on `TipCard` (bold, one line); falls back to just the category tag if unset, same as today — never a required field, existing tips stay valid with no title.
+- `TipForm` gets a `title` input above the format selector, applying to both text and video tips (not format-gated, unlike caption).
+
+**Acceptance:** a tip can have an optional title, shown prominently on its card; existing tips with no title render exactly as they do today.
+
+---
+
+### S — Phrasebook as one card
+
+**Goal:** phrasebook entries are just `Phrasebook`-category tips — with the 20 seeded phrases (Milestone P), that's 20 separate cards stacked on the Tips page, each with its own edit button and category tag repeating 20 times. Live-usage feedback: "phrasebook should be all in one card rather than multiple ones."
+
+- `TipsView` special-cases the `Phrasebook` category: instead of one `TipCard` per tip, render one `Card` listing every Phrasebook tip's `content_text` as a row (e.g. one line per phrase pair), with a per-row edit affordance rather than a per-card one.
+- Every other category, and the page's overall filter-chips-plus-flat-list structure, stays exactly as it is today — this is a `Phrasebook`-specific display rule, not a general Tips-page restructuring (confirmed: the existing Tips page layout is preferred as-is otherwise).
+- Data model unchanged — still one `tips` row per phrase; only how they're grouped for display changes, so add/edit/delete still work on individual phrases underneath.
+
+**Acceptance:** the Tips page shows exactly one Phrasebook card holding all phrase pairs, not one card per phrase; adding, editing, or deleting a single phrase still works correctly.
+
+---
+
+### V — Splash screen icon fix (Pixel)
+
+**Goal:** live-usage feedback: "on the pixel the logo that comes up on the splash screen is off." A real rendering bug, not a scoping question — needs investigation before a fix can be described precisely.
+
+- Investigate `public/icons/icon-192.png`/`icon-512.png` and the PWA manifest's icon declarations against Android's maskable-icon spec — Chrome/Android generates the splash screen from the manifest's icon + `theme_color`/`background_color`, and a non-maskable-safe icon (no safe-zone padding) is the most likely cause of an "off" look (logo cropped or off-center) on a Pixel's adaptive-icon mask, distinct from how it renders as a simple app icon elsewhere.
+- Fix scope depends on what's actually found — likely a regenerated/repadded icon asset and possibly a `"purpose": "maskable"` manifest entry, not a code logic change.
+
+**Acceptance:** the PWA splash screen renders the logo correctly centered/uncropped on an Android device, confirmed on a real Pixel (or Android emulator matching one) — devtools-only checking isn't sufficient for a rendering bug like this one.
+
+---
+
+### W — Place dates and a day-by-day itinerary view
+
+**Goal:** "what are we doing tomorrow" is hard to answer today — a stop has dates, but individual places within it don't, and the only "Day N" structure in the app is free text parsed out of a stop's description (Milestone J). Live-usage feedback (three related asks, scoped together): an optional date on a place; operationalizing "Day 1, Day 2" from places' own dates instead of parsed text; and requiring a date once both people mark a place "must go."
+
+- New `places.date date` column, optional — independent of the stop's own `start_date`/`end_date` range (a place's date should fall within its stop's range in practice, but isn't enforced; a trip planner correcting a mismatch is a UI nudge at most, not a hard constraint).
+- **New itinerary view**, separate from Stop Detail's existing free-text "Day by day" narrative (which stays exactly as-is — this doesn't touch Milestone J). Groups dated places by their `date`, undated places listed separately as "Not yet scheduled." Where this view lives (a new Route page tab, a dedicated page, or folded into the existing Route page) is an implementation detail to settle at build time, not a scoping decision.
+- **Must-go consensus triggers a date prompt.** Reuses the existing `isMutualMustGo` check (`PlaceRow.tsx`) — the moment a place's votes transition from not-mutual to mutual "must go," the trip member whose vote just completed that consensus sees a "When do you want to go?" date-picker prompt. Declining/dismissing it leaves the date unset (still optional, per the ask) — this is a nudge at the moment agreement is reached, not a hard requirement enforced elsewhere.
+
+**Acceptance:** a place can carry an optional date; a new view groups places by date into a day-by-day itinerary, with undated places shown separately; reaching mutual "must go" consensus on a place prompts whoever's vote completed it for a date, without blocking anything if they skip it.
+
+---
+
+### X — Tomorrow banner and daily push
+
+**Goal:** once places carry dates (Milestone W), "what's planned for tomorrow" becomes answerable — surfaced two ways per live-usage feedback: a banner on the Route page, and a push notification.
+
+- **Route page banner**: a "Tomorrow" section at the top of the Route page listing places dated for the next calendar day, visible to both trip members whenever they open the app — no new infrastructure, just a query against `places.date`.
+- **Daily push — a genuinely new mechanism, flagged explicitly rather than assumed.** Checked against the live database while scoping this: `pg_cron` is not installed, and the two existing "scheduled" notification types from Milestone D (`arrival_estimated`, `packing_due`) were built with polling-cron functions (`check_scheduled_arrivals()`, `check_packing_reminders()`) that nothing has ever actually invoked on a schedule — they've never fired in production. This milestone would be solving that problem for the first time, not extending a working mechanism. The likely shape (to confirm at build time, since it may have real cost/plan-tier implications worth surfacing before committing): a Vercel Cron Job hitting a Route Handler once daily, which calls a new `check_tomorrow_highlights()`-style Postgres function via RPC — and while that route is being built, it's a natural moment to also wire up the two already-existing but currently-dead scheduled notification types, since the infrastructure is the same.
+
+**Acceptance:** the Route page shows a "Tomorrow" section listing the next day's dated places; a daily push notification reaches both trip members summarizing the same; confirm before building whether wiring the pre-existing dead `arrival_estimated`/`packing_due` scheduled notifications into the same new cron mechanism is in or out of scope for this pass.
+
+---
+
+### Y — Active check-in for places, replacing "mark as visited"
+
+**Goal:** places currently get a passive "mark as visited" toggle (Milestone "Places, extended") — no exclusivity, no sense of "here now." Live-usage feedback: an active "I'm here" check-in, matching how stop check-in already works, where checking into a new place automatically un-checks whichever place you were previously at (can't be in two places at once).
+
+- `PlaceVisitedControl` is replaced with the same `CheckInControl` pattern stops already use — tapping "I'm here" at a place inserts a `place_checkins` row (unchanged table/model) and, as a new step, deletes any *other* `place_checkins` row for the same user at a place belonging to the *same stop* — the mutual-exclusivity rule is scoped to "within one stop" (accommodation vs. a place you're visiting within the same town), not trip-wide, since two people can reasonably be marked at places in different stops simultaneously if the trip data is a little behind.
+- Everywhere a place's visited state renders (Place Detail, main Map, `StopAreaMap`) keeps working unchanged — same `place_checkins` table, same dimmed-marker treatment (Milestone "Places, extended"), just a different UI/trigger for writing to it.
+
+**Acceptance:** a place's Detail page shows an "I'm here" button, not a passive toggle; checking into a new place at the same stop automatically un-marks the place you were previously checked into there; the visited-marker dimming on all three maps continues to work unchanged.
+
+---
+
+### Z — Tips surfaced on check-in
+
+**Goal:** a stop or place with saved tips is easy to miss if nobody thinks to open the Tips tab. Live-usage feedback: surface tips at check-in, reusing the existing in-app pattern (Milestone L's auto-jump-to-Places-on-checkin) rather than adding a new push notification type.
+
+- Checking into a stop (`CheckInControl`) that has related tips — via `related_stop_id`, or `related_place_id` pointing at a place within that stop — also surfaces them, e.g. a small "N tips for this stop" banner or an additional auto-jump/highlight into the Tips tab, alongside Milestone L's existing places auto-expand. Exact presentation (banner vs. tab-jump vs. both) is an implementation detail to settle at build time.
+- No new notification type, no push — purely an in-app surfacing at the moment of check-in, matching the existing low-cost pattern.
+
+**Acceptance:** checking into a stop that has related tips surfaces them in-app without the person needing to remember to open the Tips tab themselves; a stop with no related tips shows no change from today's check-in behavior.
 
 ---
 

@@ -57,6 +57,7 @@ export function TipForm({
   const [format, setFormat] = useState<TipFormat>(
     tip?.format ?? (initialSourceUrl ? "video" : "text"),
   );
+  const [title, setTitle] = useState(tip?.title ?? "");
   const [contentText, setContentText] = useState(tip?.content_text ?? "");
   const [sourceUrl, setSourceUrl] = useState(
     tip?.source_url ?? initialSourceUrl ?? "",
@@ -78,6 +79,7 @@ export function TipForm({
     const input = {
       category,
       format,
+      title: title.trim() || null,
       content_text: format === "text" ? contentText.trim() || null : null,
       source_url: format === "video" ? sourceUrl.trim() || null : null,
       video_caption: format === "video" ? videoCaption.trim() || null : null,
@@ -120,6 +122,16 @@ export function TipForm({
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="field">
+        <label htmlFor="tip-title">Title (optional)</label>
+        <input
+          id="tip-title"
+          className="input"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+        />
       </div>
 
       <div className="seg" role="radiogroup" aria-label="Tip format">

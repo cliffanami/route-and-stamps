@@ -153,6 +153,7 @@ export function ChatDrawer({ tripId, open, onClose }: ChatDrawerProps) {
         await addTip.mutateAsync({
           category: input.category,
           format: "text",
+          title: null,
           content_text: input.content_text,
           source_url: null,
           video_caption: null,

@@ -113,6 +113,7 @@ export interface Tip {
   trip_id: string;
   category: string;
   format: TipFormat;
+  title: string | null;
   content_text: string | null;
   source_url: string | null;
   embed_html: string | null;

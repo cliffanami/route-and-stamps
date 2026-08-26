@@ -62,6 +62,8 @@ export function TipCard({ tip, relatedPlaceName, onEdit }: TipCardProps) {
         </Button>
       </div>
 
+      {tip.title && <h5>{tip.title}</h5>}
+
       {tip.format === "text" ? (
         <CardBody>{tip.content_text}</CardBody>
       ) : (

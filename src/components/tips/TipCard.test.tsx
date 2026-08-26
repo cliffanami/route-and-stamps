@@ -10,6 +10,7 @@ function makeTip(overrides: Partial<Tip>): Tip {
     trip_id: "trip-1",
     category: "Food",
     format: "text",
+    title: null,
     content_text: "Try the ramen near the station.",
     source_url: null,
     embed_html: null,
@@ -26,6 +27,17 @@ function makeTip(overrides: Partial<Tip>): Tip {
 const noop = () => {};
 
 describe("TipCard", () => {
+  it("shows the title when set", () => {
+    render(<TipCard tip={makeTip({ title: "Ramen tip" })} onEdit={noop} />);
+    expect(screen.getByText("Ramen tip")).toBeInTheDocument();
+  });
+
+  it("shows no title heading when unset", () => {
+    render(<TipCard tip={makeTip({ title: null })} onEdit={noop} />);
+    expect(screen.queryByRole("heading", { level: 5 })).not.toBeInTheDocument();
+  });
+
+
   it("shows the category and text content for a text tip", () => {
     render(<TipCard tip={makeTip({})} onEdit={noop} />);
     expect(screen.getByText("Food")).toBeInTheDocument();

@@ -5,6 +5,7 @@ function makeTip(overrides: Partial<Parameters<typeof tipSchema.parse>[0]>) {
   return {
     category: "Food",
     format: "text" as const,
+    title: null,
     content_text: null,
     source_url: null,
     embed_html: null,
@@ -59,6 +60,20 @@ describe("tipSchema", () => {
         content_text: "Near the shrine.",
         related_place_id: "11111111-1111-1111-1111-111111111111",
       }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("allows an optional title on either format", () => {
+    const result = tipSchema.safeParse(
+      makeTip({ content_text: "Try the ramen.", title: "Ramen tip" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("allows a tip with no title", () => {
+    const result = tipSchema.safeParse(
+      makeTip({ content_text: "Try the ramen.", title: null }),
     );
     expect(result.success).toBe(true);
   });
