@@ -494,14 +494,15 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
-### Y — Active check-in for places, replacing "mark as visited"
+### Y — Active check-in for places, replacing "mark as visited" — shipped (2026-08-26)
 
 **Goal:** places currently get a passive "mark as visited" toggle (Milestone "Places, extended") — no exclusivity, no sense of "here now." Live-usage feedback: an active "I'm here" check-in, matching how stop check-in already works, where checking into a new place automatically un-checks whichever place you were previously at (can't be in two places at once).
 
-- `PlaceVisitedControl` is replaced with the same `CheckInControl` pattern stops already use — tapping "I'm here" at a place inserts a `place_checkins` row (unchanged table/model) and, as a new step, deletes any *other* `place_checkins` row for the same user at a place belonging to the *same stop* — the mutual-exclusivity rule is scoped to "within one stop" (accommodation vs. a place you're visiting within the same town), not trip-wide, since two people can reasonably be marked at places in different stops simultaneously if the trip data is a little behind.
+- `PlaceVisitedControl` deleted, replaced by `PlaceCheckInControl` — mirrors `CheckInControl`'s stop pattern exactly (same `HandWaving` icon, same "I'm here"/"Checked in" labels), not a second different mental model for places vs. stops.
+- `useCheckInPlace` (replacing `useTogglePlaceVisited`) still writes the same unchanged `place_checkins` table, but checking in now also looks up the place's `nearest_stop_id`, finds every other place sharing that stop, and deletes this user's `place_checkins` row at any of them before inserting the new one — mutual exclusivity scoped to "within one stop," not trip-wide, since two people can reasonably be checked in at places in different stops at once if the trip data is a little behind.
 - Everywhere a place's visited state renders (Place Detail, main Map, `StopAreaMap`) keeps working unchanged — same `place_checkins` table, same dimmed-marker treatment (Milestone "Places, extended"), just a different UI/trigger for writing to it.
 
-**Acceptance:** a place's Detail page shows an "I'm here" button, not a passive toggle; checking into a new place at the same stop automatically un-marks the place you were previously checked into there; the visited-marker dimming on all three maps continues to work unchanged.
+**Acceptance:** a place's Detail page shows an "I'm here" button, not a passive toggle (verified live); checking into a new place at the same stop automatically un-marks the place checked into before at that stop (verified live: check in at Place A, then Place B in the same stop — A reverts to "I'm here"); checking into a place at a *different* stop leaves an existing check-in elsewhere untouched (verified live, the scoping-to-one-stop edge case); the visited-marker dimming on all three maps continues to work unchanged (same `place_checkins` table, no display-layer changes needed).
 
 ---
 

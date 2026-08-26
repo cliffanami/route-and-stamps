@@ -17,7 +17,7 @@ import { VoteScale, VOTE_LEVEL_LABEL } from "./VoteScale";
 import { MEAL_TAG_LABEL } from "./MealTagPicker";
 import { LocationMapLoader } from "@/components/map/LocationMapLoader";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
-import { PlaceVisitedControl } from "./PlaceVisitedControl";
+import { PlaceCheckInControl } from "./PlaceCheckInControl";
 import { usePlaceCheckins } from "@/lib/queries/use-place-checkins";
 import { BudgetForm } from "@/components/budget/BudgetForm";
 import { CostLineRow } from "@/components/budget/CostLineRow";
@@ -253,7 +253,7 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
         </div>
       )}
 
-      <PlaceVisitedControl tripId={tripId} place={place} checkins={placeCheckins} />
+      <PlaceCheckInControl tripId={tripId} place={place} checkins={placeCheckins} />
 
       <MediaSlider
         photoPath={place.photo_url}
