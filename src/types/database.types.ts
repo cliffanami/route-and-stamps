@@ -116,6 +116,8 @@ export interface Tip {
   content_text: string | null;
   source_url: string | null;
   embed_html: string | null;
+  video_caption: string | null;
+  tags: string[];
   related_place_id: string | null;
   related_stop_id: string | null;
   added_by: string;

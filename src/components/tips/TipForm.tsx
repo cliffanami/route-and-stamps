@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { TagListEditor } from "@/components/trip/TagListEditor";
 import { useToast } from "@/components/ui/Toast";
 import { useAddTip, useUpdateTip } from "@/lib/queries/use-tips";
 import { usePlaces } from "@/lib/queries/use-places";
@@ -60,6 +61,8 @@ export function TipForm({
   const [sourceUrl, setSourceUrl] = useState(
     tip?.source_url ?? initialSourceUrl ?? "",
   );
+  const [videoCaption, setVideoCaption] = useState(tip?.video_caption ?? "");
+  const [tags, setTags] = useState<string[]>(tip?.tags ?? []);
   const [relatedPlaceId, setRelatedPlaceId] = useState(
     tip?.related_place_id ?? initialRelatedPlaceId ?? "",
   );
@@ -77,6 +80,8 @@ export function TipForm({
       format,
       content_text: format === "text" ? contentText.trim() || null : null,
       source_url: format === "video" ? sourceUrl.trim() || null : null,
+      video_caption: format === "video" ? videoCaption.trim() || null : null,
+      tags,
       related_place_id: relatedPlaceId || null,
       related_stop_id: relatedStopId || null,
     };
@@ -143,17 +148,36 @@ export function TipForm({
           />
         </div>
       ) : (
-        <div className="field">
-          <label htmlFor="tip-url">Instagram or TikTok link</label>
-          <input
-            id="tip-url"
-            className="input"
-            value={sourceUrl}
-            onChange={(event) => setSourceUrl(event.target.value)}
-            placeholder="https://www.tiktok.com/@user/video/..."
-          />
-        </div>
+        <>
+          <div className="field">
+            <label htmlFor="tip-url">Instagram or TikTok link</label>
+            <input
+              id="tip-url"
+              className="input"
+              value={sourceUrl}
+              onChange={(event) => setSourceUrl(event.target.value)}
+              placeholder="https://www.tiktok.com/@user/video/..."
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="tip-video-caption">Caption (optional)</label>
+            <textarea
+              id="tip-video-caption"
+              className="input"
+              placeholder="Why you saved this"
+              value={videoCaption}
+              onChange={(event) => setVideoCaption(event.target.value)}
+            />
+          </div>
+        </>
       )}
+
+      <TagListEditor
+        label="Tags (optional)"
+        values={tags}
+        onChange={setTags}
+        placeholder="e.g. rainy-day, budget"
+      />
 
       {places.length > 0 && (
         <div className="field">

@@ -1,10 +1,11 @@
 import { z } from "zod";
 
-// Shared by TipForm (React Hook Form resolver) and the Supabase insert
-// (parse before insert) — one schema, two enforcement points
-// (CONVENTIONS.md §3). category is free-form, not an enum, matching the
-// schema.sql column comment (PRD §6.4). embed_html is set programmatically
-// from the oEmbed fetch, not typed directly, but still validated pre-insert.
+// Enforced at one point today — TipForm.tsx uses plain useState, not a
+// React Hook Form resolver, so this only runs via the Supabase mutation
+// (parse before insert), not the "two enforcement points" CONVENTIONS.md
+// §3 asks for. category is free-form, not an enum, matching the schema.sql
+// column comment (PRD §6.4). embed_html is set programmatically from the
+// oEmbed fetch, not typed directly, but still validated pre-insert.
 export const tipSchema = z
   .object({
     category: z.string().trim().min(1, "Category is required").max(60),
@@ -12,6 +13,13 @@ export const tipSchema = z
     content_text: z.string().trim().max(2000).nullable(),
     source_url: z.string().trim().url("Must be a valid URL").nullable(),
     embed_html: z.string().nullable(),
+    // Video-only, optional — a "why I saved this" note alongside the link,
+    // the same role content_text plays for a text tip (ROADMAP.md
+    // Milestone P).
+    video_caption: z.string().trim().max(500).nullable(),
+    // Free-text, additive — not category (category is the existing strict
+    // single-select; a tip can carry more than one tag).
+    tags: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
     related_place_id: z.string().uuid().nullable(),
     // Independent of related_place_id (ROADMAP.md Milestone B) — either,
     // both, or neither can be set. A tip doesn't have to be tied to

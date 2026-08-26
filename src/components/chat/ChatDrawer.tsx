@@ -155,6 +155,8 @@ export function ChatDrawer({ tripId, open, onClose }: ChatDrawerProps) {
           format: "text",
           content_text: input.content_text,
           source_url: null,
+          video_caption: null,
+          tags: [],
           related_place_id: resolveIdByName(input.related_place_name, places),
           related_stop_id: resolveIdByName(input.related_stop_name, stops),
         });

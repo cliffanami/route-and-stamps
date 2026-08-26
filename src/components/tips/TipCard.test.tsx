@@ -13,6 +13,8 @@ function makeTip(overrides: Partial<Tip>): Tip {
     content_text: "Try the ramen near the station.",
     source_url: null,
     embed_html: null,
+    video_caption: null,
+    tags: [],
     related_place_id: null,
     related_stop_id: null,
     added_by: "user-1",
@@ -87,6 +89,31 @@ describe("TipCard", () => {
     await user.click(screen.getByRole("button", { name: "Show TikTok embed" }));
 
     await waitFor(() => expect(screen.getByText("post")).toBeInTheDocument());
+  });
+
+  it("shows a video tip's caption alongside its link", () => {
+    render(
+      <TipCard
+        tip={makeTip({
+          format: "video",
+          content_text: null,
+          source_url: "https://www.tiktok.com/@user/video/123",
+          video_caption: "Great walkthrough of the night market.",
+        })}
+        onEdit={noop}
+      />,
+    );
+    expect(
+      screen.getByText("Great walkthrough of the night market."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows each tag", () => {
+    render(
+      <TipCard tip={makeTip({ tags: ["rainy-day", "budget"] })} onEdit={noop} />,
+    );
+    expect(screen.getByText("rainy-day")).toBeInTheDocument();
+    expect(screen.getByText("budget")).toBeInTheDocument();
   });
 
   it("shows the related place when given one", () => {

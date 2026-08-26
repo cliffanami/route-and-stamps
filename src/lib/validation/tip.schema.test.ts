@@ -8,6 +8,8 @@ function makeTip(overrides: Partial<Parameters<typeof tipSchema.parse>[0]>) {
     content_text: null,
     source_url: null,
     embed_html: null,
+    video_caption: null,
+    tags: [],
     related_place_id: null,
     related_stop_id: null,
     ...overrides,
@@ -59,5 +61,59 @@ describe("tipSchema", () => {
       }),
     );
     expect(result.success).toBe(true);
+  });
+
+  it("allows a video tip to carry an optional caption", () => {
+    const result = tipSchema.safeParse(
+      makeTip({
+        format: "video",
+        source_url: "https://www.tiktok.com/@user/video/123",
+        video_caption: "Great walkthrough of the night market.",
+      }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("allows a tip with no caption", () => {
+    const result = tipSchema.safeParse(
+      makeTip({ content_text: "Try the ramen.", video_caption: null }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a tip with multiple tags", () => {
+    const result = tipSchema.safeParse(
+      makeTip({
+        content_text: "Try the ramen.",
+        tags: ["rainy-day", "budget"],
+      }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("defaults tags to an empty array when omitted", () => {
+    const withoutTags: Record<string, unknown> = makeTip({
+      content_text: "Try the ramen.",
+    });
+    delete withoutTags.tags;
+    const result = tipSchema.parse(withoutTags);
+    expect(result.tags).toEqual([]);
+  });
+
+  it("rejects an empty-string tag", () => {
+    const result = tipSchema.safeParse(
+      makeTip({ content_text: "Try the ramen.", tags: [""] }),
+    );
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects more than 10 tags", () => {
+    const result = tipSchema.safeParse(
+      makeTip({
+        content_text: "Try the ramen.",
+        tags: Array.from({ length: 11 }, (_, i) => `tag-${i}`),
+      }),
+    );
+    expect(result.success).toBe(false);
   });
 });

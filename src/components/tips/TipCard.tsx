@@ -45,6 +45,11 @@ export function TipCard({ tip, relatedPlaceName, onEdit }: TipCardProps) {
         <CardMeta>
           <Tag variant="accent">{tip.category}</Tag>
           {tip.format === "video" && <Tag variant="outline">Video</Tag>}
+          {tip.tags.map((tag) => (
+            <Tag key={tag} variant="neutral">
+              {tag}
+            </Tag>
+          ))}
         </CardMeta>
         <Button
           type="button"
@@ -60,7 +65,8 @@ export function TipCard({ tip, relatedPlaceName, onEdit }: TipCardProps) {
       {tip.format === "text" ? (
         <CardBody>{tip.content_text}</CardBody>
       ) : (
-        <div>
+        <div className="flex flex-col gap-2">
+          {tip.video_caption && <CardBody>{tip.video_caption}</CardBody>}
           {hasRenderableEmbed ? (
             expanded ? (
               <EmbedPanel html={tip.embed_html!} provider={provider} />
