@@ -17,6 +17,12 @@ interface PlaceRowProps {
   votes: Vote[];
   currentUserId: string | null;
   members: TripMember[];
+  // Fires only on the not-mutual → mutual "must go" transition (ROADMAP.md
+  // Milestone W), not on every vote — mirrors CheckInControl's onCheckedIn
+  // shape: captured synchronously from the votes already in scope here,
+  // before the mutation lands, since neither the mutation nor its generic
+  // hook knows about must-go semantics.
+  onMustGoConsensus?: (place: Place) => void;
 }
 
 // Mutual "Must go" (ROADMAP.md M1): every trip member's vote on this place
@@ -38,6 +44,7 @@ export function PlaceRow({
   votes,
   currentUserId,
   members,
+  onMustGoConsensus,
 }: PlaceRowProps) {
   const castVote = useCastVote(tripId);
   const placeVotes = votes.filter((v) => v.place_id === place.id);
@@ -77,7 +84,28 @@ export function PlaceRow({
       )}
       <VoteScale
         value={myVote}
-        onChange={(level) => castVote.mutate({ placeId: place.id, level })}
+        onChange={(level) => {
+          const wasConsensus = consensus;
+          const nextVotes = currentUserId
+            ? placeVotes.some((v) => v.user_id === currentUserId)
+              ? placeVotes.map((v) =>
+                  v.user_id === currentUserId ? { ...v, level } : v,
+                )
+              : [
+                  ...placeVotes,
+                  { place_id: place.id, user_id: currentUserId, level, updated_at: "" },
+                ]
+            : placeVotes;
+          const willBeConsensus = isMutualMustGo(nextVotes, memberIds);
+          castVote.mutate(
+            { placeId: place.id, level },
+            {
+              onSuccess: () => {
+                if (!wasConsensus && willBeConsensus) onMustGoConsensus?.(place);
+              },
+            },
+          );
+        }}
         disabled={!currentUserId}
       />
       {otherVotes.length > 0 && (

@@ -66,6 +66,7 @@ export function EditPlaceDetailsForm({
       : null,
   );
   const [stopId, setStopId] = useState(place.nearest_stop_id ?? "");
+  const [date, setDate] = useState(place.date ?? "");
   const [mealTags, setMealTags] = useState<MealTag[]>(place.meal_tags);
   const [isAccommodation, setIsAccommodation] = useState(place.is_accommodation);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +104,7 @@ export function EditPlaceDetailsForm({
         lng: located?.lng ?? null,
         town: located?.town ?? null,
         nearest_stop_id: stopId || null,
+        date: date || null,
         meal_tags: mealTags,
         is_accommodation: isAccommodation,
       });
@@ -151,6 +153,17 @@ export function EditPlaceDetailsForm({
           )}
         </div>
       )}
+
+      <div className="field">
+        <label htmlFor="edit-place-date">Date (optional)</label>
+        <input
+          id="edit-place-date"
+          type="date"
+          className="input"
+          value={date}
+          onChange={(event) => setDate(event.target.value)}
+        />
+      </div>
 
       <MealTagPicker value={mealTags} onChange={setMealTags} />
       <AccommodationToggle checked={isAccommodation} onChange={setIsAccommodation} />

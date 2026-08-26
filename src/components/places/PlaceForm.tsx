@@ -189,6 +189,9 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
       nearest_stop_id: stopId || null,
       meal_tags: mealTags,
       is_accommodation: isAccommodation,
+      // Not settable at creation — added later via Place Detail's edit form
+      // or the mutual-must-go date prompt (ROADMAP.md Milestone W).
+      date: null,
     });
     reset();
     setName("");

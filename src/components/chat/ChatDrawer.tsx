@@ -141,6 +141,7 @@ export function ChatDrawer({ tripId, open, onClose }: ChatDrawerProps) {
           lng: top?.lng ?? null,
           town: top?.town ?? null,
           nearest_stop_id: top ? (nearestStop(top.lat, top.lng, stops)?.id ?? null) : null,
+          date: null,
           meal_tags: [],
           is_accommodation: false,
         });

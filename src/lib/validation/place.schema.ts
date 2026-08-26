@@ -9,6 +9,10 @@ export const placeSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   source_url: z.string().trim().url("Must be a valid URL").nullable(),
   note: z.string().trim().max(2000).nullable(),
+  // Independent of the place's stop's own start_date/end_date range, not
+  // enforced against it (ROADMAP.md Milestone W) — "what are we doing
+  // tomorrow" answered from a place's own date, not a stop-level range.
+  date: z.string().trim().min(1).nullable(),
   lat: z.number().min(-90).max(90).nullable(),
   lng: z.number().min(-180).max(180).nullable(),
   town: z.string().max(200).nullable(),

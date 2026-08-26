@@ -81,6 +81,7 @@ export interface Place {
   embed_html: string | null;
   photo_url: string | null;
   note: string | null;
+  date: string | null;
   booking_status: BookingStatus;
   meal_tags: MealTag[];
   is_accommodation: boolean;

@@ -18,6 +18,9 @@ import { StopCard } from "./StopCard";
 import { PlaceRow, isMutualMustGo } from "./PlaceRow";
 import { AddStopForm } from "./AddStopForm";
 import { FunFactsFeed } from "./FunFactsFeed";
+import { ItineraryView } from "./ItineraryView";
+import { MustGoDatePrompt } from "./MustGoDatePrompt";
+import type { Place } from "@/types/database.types";
 
 interface RouteSpineProps {
   tripId: string;
@@ -44,6 +47,7 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
   // opt-in declutter, not the default view.
   const [hideSkipped, setHideSkipped] = useState(false);
   const [addingStop, setAddingStop] = useState(false);
+  const [datePromptPlace, setDatePromptPlace] = useState<Place | null>(null);
 
   const memberIds = members.map((m) => m.user_id);
 
@@ -145,6 +149,7 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
                   votes={votes}
                   currentUserId={userId}
                   members={members}
+                  onMustGoConsensus={setDatePromptPlace}
                 />
               ))
             )}
@@ -164,11 +169,20 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
                 votes={votes}
                 currentUserId={userId}
                 members={members}
+                onMustGoConsensus={setDatePromptPlace}
               />
             ))}
           </div>
         </section>
       )}
+
+      <ItineraryView tripId={tripId} places={places} />
+
+      <MustGoDatePrompt
+        tripId={tripId}
+        place={datePromptPlace}
+        onClose={() => setDatePromptPlace(null)}
+      />
 
       <Dialog
         open={addingStop}

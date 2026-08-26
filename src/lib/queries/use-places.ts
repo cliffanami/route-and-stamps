@@ -197,6 +197,29 @@ export function useAttachPlaceEmbed(tripId: string) {
   });
 }
 
+// Narrow single-field update, same shape as useAttachPlaceEmbed — the
+// mutual-must-go date prompt (ROADMAP.md Milestone W) only ever sets this
+// one field, and useUpdatePlace's schema requires every editable field
+// (name, note, etc.), not just the one being changed.
+export function useSetPlaceDate(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ placeId, date }: { placeId: string; date: string | null }) => {
+      const parsed = placeSchema.pick({ date: true }).parse({ date });
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("places")
+        .update(parsed)
+        .eq("id", placeId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["places", tripId] });
+    },
+  });
+}
+
 // Uploads a photo to the private place-photos bucket (ROADMAP.md M2) and
 // records its Storage object path — not a fetchable URL, since the bucket
 // is private (PRD §12c); usePlacePhotoUrl resolves a signed URL for display.
