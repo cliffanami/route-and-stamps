@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
-import { useTrip } from "@/lib/queries/use-trip";
+import { useTrip, useUpdateTripCategoryConfig } from "@/lib/queries/use-trip";
 import { useTripMembers } from "@/lib/queries/use-trip-members";
 import {
   useTogglePackingItem,
@@ -38,6 +38,7 @@ export function PackingView({ tripId }: PackingViewProps) {
   const toggleShared = useTogglePackingItem(tripId);
   const toggleCheck = useTogglePackingItemCheck(tripId);
   const deleteItem = useDeletePackingItem(tripId);
+  const updateCategoryConfig = useUpdateTripCategoryConfig(tripId);
   useRealtimeSubscription("packing_items", tripId);
   useRealtimeSubscription("packing_item_checks", tripId);
 
@@ -59,6 +60,20 @@ export function PackingView({ tripId }: PackingViewProps) {
   function closeFormDialog() {
     setAddingItem(false);
     setEditingItem(null);
+  }
+
+  // Lets PackingForm add a category inline without leaving the form
+  // (live-usage feedback on Milestone Q) — a full-row update on `trips`,
+  // same shape Trip Settings' own category editors use, just triggered
+  // from the packing form instead of Settings.
+  async function handleAddPackingCategory(newCategory: string) {
+    if (!trip) return;
+    await updateCategoryConfig.mutateAsync({
+      currencies: trip.currencies,
+      tip_categories: trip.tip_categories,
+      budget_categories: trip.budget_categories,
+      packing_categories: [...trip.packing_categories, newCategory],
+    });
   }
 
   async function handleDelete() {
@@ -145,6 +160,7 @@ export function PackingView({ tripId }: PackingViewProps) {
             tripId={tripId}
             item={editingItem ?? undefined}
             categories={trip?.packing_categories ?? []}
+            onAddCategory={handleAddPackingCategory}
             onDone={closeFormDialog}
           />
         </Dialog>

@@ -6,6 +6,8 @@ import { useToast } from "@/components/ui/Toast";
 import { useAddPackingItem, useUpdatePackingItem } from "@/lib/queries/use-packing-items";
 import type { PackingItem } from "@/types/database.types";
 
+const ADD_NEW_CATEGORY = "__add_new__";
+
 interface PackingFormProps {
   tripId: string;
   onDone: () => void;
@@ -13,6 +15,11 @@ interface PackingFormProps {
   // Strict select (ROADMAP.md Milestone Q), sourced from the trip's own
   // configured list (Trip Settings), not derived from already-used values.
   categories: string[];
+  // Adds the category to the trip's configured list (a Trip Settings
+  // update under the hood) without leaving this form — live-usage
+  // feedback: if the category you want doesn't exist yet, you shouldn't
+  // have to go configure it elsewhere first.
+  onAddCategory: (category: string) => Promise<void>;
 }
 
 // Shared vs. per-person is a scope choice, same .seg pattern TipForm uses
@@ -22,7 +29,13 @@ interface PackingFormProps {
 // tracked via packing_item_checks, not a duplicated row per person.
 // Doubles as the edit form — pass an existing `item` to prefill and update
 // it instead of adding a new one.
-export function PackingForm({ tripId, onDone, item, categories }: PackingFormProps) {
+export function PackingForm({
+  tripId,
+  onDone,
+  item,
+  categories,
+  onAddCategory,
+}: PackingFormProps) {
   const addItem = useAddPackingItem(tripId);
   const updateItem = useUpdatePackingItem(tripId);
   const { showToast } = useToast();
@@ -35,6 +48,10 @@ export function PackingForm({ tripId, onDone, item, categories }: PackingFormPro
   const categoryOptions = Array.from(
     new Set([...categories, ...(item?.category ? [item.category] : [])]),
   );
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategoryDraft, setNewCategoryDraft] = useState("");
+  const [addCategoryPending, setAddCategoryPending] = useState(false);
+  const [addCategoryError, setAddCategoryError] = useState<string | null>(null);
   const [description, setDescription] = useState(item?.description ?? "");
   const [isShared, setIsShared] = useState(item?.is_shared ?? true);
   const [isDocument, setIsDocument] = useState(item?.is_document ?? false);
@@ -72,6 +89,34 @@ export function PackingForm({ tripId, onDone, item, categories }: PackingFormPro
     }
   }
 
+  async function handleAddNewCategory() {
+    const clean = newCategoryDraft.trim();
+    if (!clean) return;
+
+    // Already configured (or was just added) — select it, same
+    // silent-dedup behavior TagListEditor already uses elsewhere.
+    if (categoryOptions.includes(clean)) {
+      setCategory(clean);
+      setAddingCategory(false);
+      setNewCategoryDraft("");
+      setAddCategoryError(null);
+      return;
+    }
+
+    setAddCategoryPending(true);
+    setAddCategoryError(null);
+    try {
+      await onAddCategory(clean);
+      setCategory(clean);
+      setAddingCategory(false);
+      setNewCategoryDraft("");
+    } catch {
+      setAddCategoryError("Couldn't add that category — try again.");
+    } finally {
+      setAddCategoryPending(false);
+    }
+  }
+
   const pending = isEditing ? updateItem.isPending : addItem.isPending;
 
   return (
@@ -93,7 +138,13 @@ export function PackingForm({ tripId, onDone, item, categories }: PackingFormPro
           id="packing-category"
           className="input"
           value={category}
-          onChange={(event) => setCategory(event.target.value)}
+          onChange={(event) => {
+            if (event.target.value === ADD_NEW_CATEGORY) {
+              setAddingCategory(true);
+              return;
+            }
+            setCategory(event.target.value);
+          }}
         >
           <option value="">— None —</option>
           {categoryOptions.map((c) => (
@@ -101,8 +152,53 @@ export function PackingForm({ tripId, onDone, item, categories }: PackingFormPro
               {c}
             </option>
           ))}
+          <option value={ADD_NEW_CATEGORY}>+ Add a new category…</option>
         </select>
       </div>
+
+      {addingCategory && (
+        <div className="field">
+          <label htmlFor="packing-new-category">New category name</label>
+          <div className="flex gap-2">
+            <input
+              id="packing-new-category"
+              className="input"
+              value={newCategoryDraft}
+              onChange={(event) => {
+                setNewCategoryDraft(event.target.value);
+                setAddCategoryError(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  handleAddNewCategory();
+                }
+              }}
+              autoFocus
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleAddNewCategory}
+              disabled={addCategoryPending || !newCategoryDraft.trim()}
+            >
+              {addCategoryPending ? "Adding…" : "Add"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setAddingCategory(false);
+                setNewCategoryDraft("");
+                setAddCategoryError(null);
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+          {addCategoryError && <p className="text-muted">{addCategoryError}</p>}
+        </div>
+      )}
 
       <div className="field">
         <label htmlFor="packing-description">Description (optional)</label>
