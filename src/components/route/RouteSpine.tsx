@@ -6,6 +6,7 @@ import { useTrip } from "@/lib/queries/use-trip";
 import { useStops } from "@/lib/queries/use-stops";
 import { usePlaces } from "@/lib/queries/use-places";
 import { useVotes } from "@/lib/queries/use-votes";
+import { useTips } from "@/lib/queries/use-tips";
 import { useStopCheckins } from "@/lib/queries/use-stop-checkins";
 import { usePlaceCheckins } from "@/lib/queries/use-place-checkins";
 import { useTripMembers } from "@/lib/queries/use-trip-members";
@@ -39,6 +40,7 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
   const { data: members = [] } = membersQuery;
   const { data: checkins = [] } = useStopCheckins(tripId);
   const { data: placeCheckins = [] } = usePlaceCheckins(tripId);
+  const { data: tips = [] } = useTips(tripId);
   useRealtimeSubscription("places", tripId);
   useRealtimeSubscription("votes", tripId);
 
@@ -140,6 +142,8 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
             consensusCount={consensusCount}
             checkins={checkins}
             placeCheckins={placeCheckins}
+            tips={tips}
+            currentUserId={userId}
           >
             {stopPlaces.length === 0 ? (
               <p className="text-muted">No places here yet.</p>

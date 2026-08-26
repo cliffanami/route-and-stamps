@@ -22,6 +22,7 @@ import { CheckInControl } from "./CheckInControl";
 import { LocationMapLoader } from "@/components/map/LocationMapLoader";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
+import { useCurrentUserId } from "@/lib/queries/use-current-user";
 import { useStop, useDeleteStop } from "@/lib/queries/use-stops";
 import { usePlaces } from "@/lib/queries/use-places";
 import { useTips, useDeleteTip } from "@/lib/queries/use-tips";
@@ -54,6 +55,7 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
   const { data: budgetLines = [] } = useBudgetLines(tripId);
   const { data: checkins = [] } = useStopCheckins(tripId);
   const { data: placeCheckins = [] } = usePlaceCheckins(tripId);
+  const userId = useCurrentUserId();
   const deleteStop = useDeleteStop(tripId);
   const deleteTip = useDeleteTip(tripId);
   const deleteCost = useDeleteBudgetLine(tripId);
@@ -63,7 +65,9 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
   // Only read at DetailTabs' own mount (key change forces a remount) —
   // checking in jumps straight to "what's planned here" once, but doesn't
   // fight the user if they navigate elsewhere afterward.
-  const [defaultDetailTab, setDefaultDetailTab] = useState<"overview" | "places">("overview");
+  const [defaultDetailTab, setDefaultDetailTab] = useState<
+    "overview" | "places" | "tips"
+  >("overview");
   const [confirmingDeleteStop, setConfirmingDeleteStop] = useState(false);
   const [deleteStopError, setDeleteStopError] = useState<string | null>(null);
   const [addingTip, setAddingTip] = useState(false);
@@ -81,9 +85,20 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
 
   const stopPlaces = places.filter((p) => p.nearest_stop_id === stopId);
   const accommodationPlaces = stopPlaces.filter((p) => p.is_accommodation);
-  const stopTips = tips.filter((t) => t.related_stop_id === stopId);
+  // A tip about a place within this stop counts as "for this stop" too
+  // (ROADMAP.md Milestone Z) — not just tips explicitly tagged to the stop
+  // itself.
+  const stopPlaceIds = new Set(stopPlaces.map((p) => p.id));
+  const stopTips = tips.filter(
+    (t) =>
+      t.related_stop_id === stopId ||
+      (t.related_place_id !== null && stopPlaceIds.has(t.related_place_id)),
+  );
   const stopCosts = budgetLines.filter((b) => b.stop_id === stopId);
   const placeNameById = new Map(places.map((p) => [p.id, p.name]));
+  const iAmCheckedIn = checkins.some(
+    (c) => c.stop_id === stopId && c.user_id === userId,
+  );
 
   const tipDialogOpen = addingTip || editingTip !== null;
   function closeTipDialog() {
@@ -207,6 +222,16 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
         checkins={checkins}
         onCheckedIn={() => setDefaultDetailTab("places")}
       />
+
+      {iAmCheckedIn && stopTips.length > 0 && (
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => setDefaultDetailTab("tips")}
+        >
+          {stopTips.length} tip{stopTips.length === 1 ? "" : "s"} for this stop
+        </button>
+      )}
 
       {(stop.transport_mode || stop.transport_detail || stop.departure_point || stop.arrival_point) && (
         <div className="flex flex-col gap-1">

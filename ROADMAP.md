@@ -506,14 +506,16 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
-### Z — Tips surfaced on check-in
+### Z — Tips surfaced on check-in — shipped (2026-08-26)
 
 **Goal:** a stop or place with saved tips is easy to miss if nobody thinks to open the Tips tab. Live-usage feedback: surface tips at check-in, reusing the existing in-app pattern (Milestone L's auto-jump-to-Places-on-checkin) rather than adding a new push notification type.
 
-- Checking into a stop (`CheckInControl`) that has related tips — via `related_stop_id`, or `related_place_id` pointing at a place within that stop — also surfaces them, e.g. a small "N tips for this stop" banner or an additional auto-jump/highlight into the Tips tab, alongside Milestone L's existing places auto-expand. Exact presentation (banner vs. tab-jump vs. both) is an implementation detail to settle at build time.
+- **"N tips for this stop" banner**, shown once checked in and only when `stopTips.length > 0` — "for this stop" counts a tip whose `related_stop_id` matches, or whose `related_place_id` points at a place within that stop (not just tips explicitly tagged to the stop itself). Shown in two places, since check-in commonly happens from the Route page without ever opening Stop Detail — exactly the "forgets the tip tab" scenario the feedback described:
+  - **`StopCard` (Route page)**: a link to Stop Detail (StopCard has no tabs of its own to jump to).
+  - **`StopDetail`'s Overview**: reuses the exact `key={defaultDetailTab}`-remount mechanism Milestone L already established for jumping to the Places tab — tapping the banner jumps straight to the Tips tab. Deliberately doesn't replace the existing Places auto-jump on check-in (can only default into one tab); this is a persistent banner alongside it, not a second competing auto-jump.
 - No new notification type, no push — purely an in-app surfacing at the moment of check-in, matching the existing low-cost pattern.
 
-**Acceptance:** checking into a stop that has related tips surfaces them in-app without the person needing to remember to open the Tips tab themselves; a stop with no related tips shows no change from today's check-in behavior.
+**Acceptance:** checking into a stop that has related tips surfaces them in-app without the person needing to remember to open the Tips tab themselves — verified live end-to-end: no banner before check-in, the banner appears on the Route page's StopCard immediately after checking in, clicking it navigates to Stop Detail where the same banner persists (real check-in state, not page-local), and tapping that banner jumps to the Tips tab showing the actual tip content; a stop with no related tips shows no change from today's check-in behavior.
 
 ---
 

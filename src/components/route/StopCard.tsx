@@ -7,7 +7,7 @@ import { Tag } from "@/components/ui/Tag";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
 import { CheckInControl } from "./CheckInControl";
-import type { Place, PlaceCheckin, Stop, StopCheckin } from "@/types/database.types";
+import type { Place, PlaceCheckin, Stop, StopCheckin, Tip } from "@/types/database.types";
 
 interface StopCardProps {
   tripId: string;
@@ -16,6 +16,8 @@ interface StopCardProps {
   consensusCount: number;
   checkins: StopCheckin[];
   placeCheckins: PlaceCheckin[];
+  tips: Tip[];
+  currentUserId: string | null;
   children: ReactNode;
 }
 
@@ -35,12 +37,26 @@ export function StopCard({
   consensusCount,
   checkins,
   placeCheckins,
+  tips,
+  currentUserId,
   children,
 }: StopCardProps) {
   const [expanded, setExpanded] = useState(false);
   const locatedPlaces = places.filter(
     (place): place is Place & { lat: number; lng: number } =>
       place.lat !== null && place.lng !== null,
+  );
+
+  // A tip about a place within this stop counts as "for this stop" too
+  // (ROADMAP.md Milestone Z), matching Stop Detail's own definition.
+  const placeIds = new Set(places.map((p) => p.id));
+  const stopTips = tips.filter(
+    (t) =>
+      t.related_stop_id === stop.id ||
+      (t.related_place_id !== null && placeIds.has(t.related_place_id)),
+  );
+  const iAmCheckedIn = checkins.some(
+    (c) => c.stop_id === stop.id && c.user_id === currentUserId,
   );
 
   // date_label is a free-text override — shown as-is if set. Otherwise
@@ -103,6 +119,14 @@ export function StopCard({
             checkins={checkins}
             onCheckedIn={() => setExpanded(true)}
           />
+          {iAmCheckedIn && stopTips.length > 0 && (
+            <Link
+              href={`/trips/${tripId}/stops/${stop.id}`}
+              className="btn btn-secondary"
+            >
+              {stopTips.length} tip{stopTips.length === 1 ? "" : "s"} for this stop
+            </Link>
+          )}
         </div>
       </div>
 
