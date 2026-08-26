@@ -20,6 +20,7 @@ import { AddStopForm } from "./AddStopForm";
 import { FunFactsFeed } from "./FunFactsFeed";
 import { ItineraryView } from "./ItineraryView";
 import { MustGoDatePrompt } from "./MustGoDatePrompt";
+import { TomorrowBanner } from "./TomorrowBanner";
 import type { Place } from "@/types/database.types";
 
 interface RouteSpineProps {
@@ -91,6 +92,8 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
           {trip.description && <p className="text-muted">{trip.description}</p>}
         </div>
       )}
+
+      <TomorrowBanner tripId={tripId} places={places} />
 
       <FunFactsFeed tripId={tripId} />
 
