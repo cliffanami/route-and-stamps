@@ -4,6 +4,16 @@ import type { MetadataRoute } from "next";
 // (ARCHITECTURE.md §1b's tokens, generated with no design input). Swap
 // public/icons/icon-*.png for real artwork whenever it exists; nothing
 // else needs to change.
+//
+// Separate maskable files (ROADMAP.md Milestone V) — Android's adaptive-icon
+// mask (used for both the home-screen icon and the splash screen on
+// Android 12+) can crop anything outside a centered safe-zone circle at 80%
+// of the icon's diameter. The "any" purpose icons previously did double
+// duty as "maskable" too, with the mark sized close to that boundary and no
+// real margin — reported as "off" (cropped/off-center) on a Pixel. The
+// maskable variants now carry the mark at a smaller, safely-inside-the-
+// safe-zone size; "any" purpose icons are unaffected, unmasked contexts
+// don't need the margin.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Route & Stamps",
@@ -34,7 +44,7 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "any",
       },
       {
-        src: "/icons/icon-192.png",
+        src: "/icons/icon-192-maskable.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "maskable",
@@ -46,7 +56,7 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "any",
       },
       {
-        src: "/icons/icon-512.png",
+        src: "/icons/icon-512-maskable.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
