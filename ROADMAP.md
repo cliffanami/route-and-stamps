@@ -445,7 +445,7 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
-### S — Phrasebook as one card
+### S — Phrasebook as one card — shipped (2026-08-26)
 
 **Goal:** phrasebook entries are just `Phrasebook`-category tips — with the 20 seeded phrases (Milestone P), that's 20 separate cards stacked on the Tips page, each with its own edit button and category tag repeating 20 times. Live-usage feedback: "phrasebook should be all in one card rather than multiple ones."
 

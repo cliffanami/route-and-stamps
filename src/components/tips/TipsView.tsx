@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Trash } from "@phosphor-icons/react";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
+import { Card, CardMeta } from "@/components/ui/Card";
+import { Tag } from "@/components/ui/Tag";
 import { Dialog } from "@/components/ui/Dialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { useTips, useDeleteTip } from "@/lib/queries/use-tips";
@@ -13,6 +15,14 @@ import { CategoryFilter } from "./CategoryFilter";
 import { TipCard } from "./TipCard";
 import { TipForm } from "./TipForm";
 import type { Tip } from "@/types/database.types";
+
+// Phrasebook entries are just Phrasebook-category tips — with a whole
+// seeded phrase list (ROADMAP.md Milestone P), that's one TipCard per
+// phrase otherwise. Consolidated into a single card, one row per phrase
+// (ROADMAP.md Milestone S) — every other category keeps the normal
+// one-card-per-tip layout, and the page's filter-chips-plus-flat-list
+// structure is otherwise unchanged (kept as-is on request).
+const PHRASEBOOK_CATEGORY = "Phrasebook";
 
 interface TipsViewProps {
   tripId: string;
@@ -43,6 +53,12 @@ export function TipsView({ tripId, initialSourceUrl }: TipsViewProps) {
   const visibleTips = selectedCategory
     ? tips.filter((tip) => tip.category === selectedCategory)
     : tips;
+  const phrasebookTips = visibleTips.filter(
+    (tip) => tip.category === PHRASEBOOK_CATEGORY,
+  );
+  const otherTips = visibleTips.filter(
+    (tip) => tip.category !== PHRASEBOOK_CATEGORY,
+  );
   const placeNameById = useMemo(
     () => new Map(places.map((place) => [place.id, place.name])),
     [places],
@@ -100,7 +116,7 @@ export function TipsView({ tripId, initialSourceUrl }: TipsViewProps) {
       )}
 
       <div className="flex flex-col gap-3">
-        {visibleTips.map((tip) => (
+        {otherTips.map((tip) => (
           <TipCard
             key={tip.id}
             tip={tip}
@@ -112,6 +128,33 @@ export function TipsView({ tripId, initialSourceUrl }: TipsViewProps) {
             onEdit={() => setEditingTip(tip)}
           />
         ))}
+
+        {phrasebookTips.length > 0 && (
+          <Card>
+            <CardMeta>
+              <Tag variant="accent">{PHRASEBOOK_CATEGORY}</Tag>
+            </CardMeta>
+            <div className="flex flex-col gap-2">
+              {phrasebookTips.map((tip) => (
+                <div
+                  key={tip.id}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <span>{tip.content_text}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    icon
+                    onClick={() => setEditingTip(tip)}
+                    aria-label={`Edit ${tip.content_text ?? "phrase"}`}
+                  >
+                    <PencilSimple weight="duotone" size={18} />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
 
       <Dialog
