@@ -58,6 +58,7 @@ export interface Trip {
   currencies: string[];
   tip_categories: string[];
   budget_categories: string[];
+  packing_categories: string[];
   outbound_travel_note: string | null;
   return_travel_note: string | null;
   // Per-trip configurable list backing stops.transport_mode's strict select
@@ -154,6 +155,7 @@ export interface PackingItem {
   is_shared: boolean;
   name: string;
   category: string | null;
+  description: string | null;
   is_document: boolean;
   is_checked: boolean;
   due_date: string | null;

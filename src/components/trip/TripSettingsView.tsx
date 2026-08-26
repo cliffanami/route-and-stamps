@@ -67,6 +67,7 @@ function CategoryConfigSection({ tripId, trip }: { tripId: string; trip: Trip })
         currencies: trip.currencies,
         tip_categories: trip.tip_categories,
         budget_categories: trip.budget_categories,
+        packing_categories: trip.packing_categories,
         ...next,
       },
       { onError: () => showToast("Couldn't save — try again.") },
@@ -77,8 +78,8 @@ function CategoryConfigSection({ tripId, trip }: { tripId: string; trip: Trip })
     <div className="flex flex-col gap-4">
       <h2>Currencies &amp; categories</h2>
       <p className="text-muted">
-        These lists back the dropdowns on the budget cap, cost lines, and
-        tips — only values added here can be selected.
+        These lists back the dropdowns on the budget cap, cost lines, tips,
+        and packing items — only values added here can be selected.
       </p>
 
       <TagListEditor
@@ -104,6 +105,13 @@ function CategoryConfigSection({ tripId, trip }: { tripId: string; trip: Trip })
         values={trip.budget_categories}
         onChange={(budget_categories) => save({ budget_categories })}
         placeholder="Activities"
+      />
+
+      <TagListEditor
+        label="Packing categories"
+        values={trip.packing_categories}
+        onChange={(packing_categories) => save({ packing_categories })}
+        placeholder="Electronics"
       />
     </div>
   );

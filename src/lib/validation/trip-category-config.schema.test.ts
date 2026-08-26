@@ -6,6 +6,7 @@ function makeInput(overrides: Partial<Parameters<typeof tripCategoryConfigSchema
     currencies: ["JPY", "KES"],
     tip_categories: ["Food", "Culture"],
     budget_categories: ["flights", "accommodation"],
+    packing_categories: ["Pre-trip", "On-trip"],
     ...overrides,
   };
 }
@@ -18,7 +19,12 @@ describe("tripCategoryConfigSchema", () => {
 
   it("accepts empty lists", () => {
     const result = tripCategoryConfigSchema.safeParse(
-      makeInput({ currencies: [], tip_categories: [], budget_categories: [] }),
+      makeInput({
+        currencies: [],
+        tip_categories: [],
+        budget_categories: [],
+        packing_categories: [],
+      }),
     );
     expect(result.success).toBe(true);
   });

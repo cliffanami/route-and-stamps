@@ -16,6 +16,7 @@ function makeItem(overrides: Partial<PackingItem>): PackingItem {
     trip_id: "trip-1",
     name: "Passport",
     category: "Visa & Documents",
+    description: null,
     is_document: true,
     is_shared: true,
     is_checked: false,
@@ -33,6 +34,7 @@ describe("PackingMatrix", () => {
         checks={[]}
         members={members}
         currentUserId="cliff"
+        categories={["Visa & Documents"]}
         onToggleShared={vi.fn()}
         onToggleCheck={vi.fn()}
         onShowDetail={vi.fn()}
@@ -49,6 +51,7 @@ describe("PackingMatrix", () => {
         checks={[]}
         members={members}
         currentUserId="cliff"
+        categories={["Visa & Documents"]}
         onToggleShared={vi.fn()}
         onToggleCheck={vi.fn()}
         onShowDetail={vi.fn()}
@@ -64,6 +67,7 @@ describe("PackingMatrix", () => {
         checks={[]}
         members={members}
         currentUserId="cliff"
+        categories={["Visa & Documents"]}
         onToggleShared={vi.fn()}
         onToggleCheck={vi.fn()}
         onShowDetail={vi.fn()}
@@ -83,6 +87,7 @@ describe("PackingMatrix", () => {
         checks={checks}
         members={members}
         currentUserId="cliff"
+        categories={["Visa & Documents"]}
         onToggleShared={vi.fn()}
         onToggleCheck={vi.fn()}
         onShowDetail={vi.fn()}
@@ -99,6 +104,7 @@ describe("PackingMatrix", () => {
         checks={[]}
         members={members}
         currentUserId="cliff"
+        categories={["Visa & Documents"]}
         onToggleShared={vi.fn()}
         onToggleCheck={vi.fn()}
         onShowDetail={vi.fn()}
@@ -117,6 +123,7 @@ describe("PackingMatrix", () => {
         checks={[]}
         members={members}
         currentUserId="cliff"
+        categories={["Visa & Documents"]}
         onToggleShared={vi.fn()}
         onToggleCheck={onToggleCheck}
         onShowDetail={vi.fn()}
@@ -137,6 +144,7 @@ describe("PackingMatrix", () => {
         checks={[]}
         members={members}
         currentUserId="cliff"
+        categories={["Visa & Documents"]}
         onToggleShared={onToggleShared}
         onToggleCheck={vi.fn()}
         onShowDetail={vi.fn()}
@@ -157,6 +165,7 @@ describe("PackingMatrix", () => {
         checks={[]}
         members={members}
         currentUserId="cliff"
+        categories={["Visa & Documents"]}
         onToggleShared={vi.fn()}
         onToggleCheck={vi.fn()}
         onShowDetail={onShowDetail}
@@ -168,6 +177,70 @@ describe("PackingMatrix", () => {
     expect(onShowDetail).toHaveBeenCalledWith(expect.objectContaining({ id: "item-1" }));
   });
 
+  it("shows an item's description as secondary text", () => {
+    render(
+      <PackingMatrix
+        items={[makeItem({ description: "Buy at the airport" })]}
+        checks={[]}
+        members={members}
+        currentUserId="cliff"
+        categories={["Visa & Documents"]}
+        onToggleShared={vi.fn()}
+        onToggleCheck={vi.fn()}
+        onShowDetail={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Buy at the airport")).toBeInTheDocument();
+  });
+
+  it("orders sections by the configured categories list, appending an unlisted (legacy) category at the end", () => {
+    render(
+      <PackingMatrix
+        items={[
+          makeItem({ id: "item-1", name: "Passport", category: "Visa & Documents" }),
+          makeItem({ id: "item-2", name: "Old Item", category: "Legacy Bucket" }),
+          makeItem({ id: "item-3", name: "Charger", category: "App" }),
+        ]}
+        checks={[]}
+        members={members}
+        currentUserId="cliff"
+        categories={["App", "Visa & Documents"]}
+        onToggleShared={vi.fn()}
+        onToggleCheck={vi.fn()}
+        onShowDetail={vi.fn()}
+      />,
+    );
+    const headings = screen
+      .getAllByRole("button")
+      .map((b) => b.textContent)
+      .filter((t): t is string => t !== null && ["App", "Visa & Documents", "Legacy Bucket"].includes(t));
+    expect(headings).toEqual(["App", "Visa & Documents", "Legacy Bucket"]);
+  });
+
+  it("collapses a section's items when its heading is clicked, and expands again on a second click", async () => {
+    const user = userEvent.setup();
+    render(
+      <PackingMatrix
+        items={[makeItem({})]}
+        checks={[]}
+        members={members}
+        currentUserId="cliff"
+        categories={["Visa & Documents"]}
+        onToggleShared={vi.fn()}
+        onToggleCheck={vi.fn()}
+        onShowDetail={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Passport")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Collapse Visa & Documents" }));
+    expect(screen.queryByText("Passport")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Expand Visa & Documents" }));
+    expect(screen.getByText("Passport")).toBeInTheDocument();
+  });
+
   it("renders nothing when there are no items", () => {
     const { container } = render(
       <PackingMatrix
@@ -175,6 +248,7 @@ describe("PackingMatrix", () => {
         checks={[]}
         members={members}
         currentUserId="cliff"
+        categories={["Visa & Documents"]}
         onToggleShared={vi.fn()}
         onToggleCheck={vi.fn()}
         onShowDetail={vi.fn()}

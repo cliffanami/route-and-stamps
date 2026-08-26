@@ -7,6 +7,7 @@ function makeItem(
   return {
     name: "Passport",
     category: "Documents",
+    description: null,
     is_document: true,
     is_shared: true,
     due_date: null,
@@ -33,6 +34,19 @@ describe("packingItemSchema", () => {
   it("allows a null category", () => {
     expect(
       packingItemSchema.safeParse(makeItem({ category: null })).success,
+    ).toBe(true);
+  });
+
+  it("allows an optional description", () => {
+    expect(
+      packingItemSchema.safeParse(makeItem({ description: "Buy at the airport" }))
+        .success,
+    ).toBe(true);
+  });
+
+  it("allows a null description", () => {
+    expect(
+      packingItemSchema.safeParse(makeItem({ description: null })).success,
     ).toBe(true);
   });
 });

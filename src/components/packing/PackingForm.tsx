@@ -10,6 +10,9 @@ interface PackingFormProps {
   tripId: string;
   onDone: () => void;
   item?: PackingItem;
+  // Strict select (ROADMAP.md Milestone Q), sourced from the trip's own
+  // configured list (Trip Settings), not derived from already-used values.
+  categories: string[];
 }
 
 // Shared vs. per-person is a scope choice, same .seg pattern TipForm uses
@@ -19,7 +22,7 @@ interface PackingFormProps {
 // tracked via packing_item_checks, not a duplicated row per person.
 // Doubles as the edit form — pass an existing `item` to prefill and update
 // it instead of adding a new one.
-export function PackingForm({ tripId, onDone, item }: PackingFormProps) {
+export function PackingForm({ tripId, onDone, item, categories }: PackingFormProps) {
   const addItem = useAddPackingItem(tripId);
   const updateItem = useUpdatePackingItem(tripId);
   const { showToast } = useToast();
@@ -27,6 +30,12 @@ export function PackingForm({ tripId, onDone, item }: PackingFormProps) {
 
   const [name, setName] = useState(item?.name ?? "");
   const [category, setCategory] = useState(item?.category ?? "");
+  // Defensive: keeps a legacy category not in the current configured list
+  // selectable when editing an existing item.
+  const categoryOptions = Array.from(
+    new Set([...categories, ...(item?.category ? [item.category] : [])]),
+  );
+  const [description, setDescription] = useState(item?.description ?? "");
   const [isShared, setIsShared] = useState(item?.is_shared ?? true);
   const [isDocument, setIsDocument] = useState(item?.is_document ?? false);
   const [dueDate, setDueDate] = useState(item?.due_date ?? "");
@@ -38,7 +47,8 @@ export function PackingForm({ tripId, onDone, item }: PackingFormProps) {
 
     const input = {
       name,
-      category: category.trim() || null,
+      category: category || null,
+      description: description.trim() || null,
       is_document: isDocument,
       is_shared: isShared,
       due_date: dueDate || null,
@@ -79,11 +89,29 @@ export function PackingForm({ tripId, onDone, item }: PackingFormProps) {
 
       <div className="field">
         <label htmlFor="packing-category">Category (optional)</label>
-        <input
+        <select
           id="packing-category"
           className="input"
           value={category}
           onChange={(event) => setCategory(event.target.value)}
+        >
+          <option value="">— None —</option>
+          {categoryOptions.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="field">
+        <label htmlFor="packing-description">Description (optional)</label>
+        <input
+          id="packing-description"
+          className="input"
+          placeholder="Which bag, buy at the airport, etc."
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
         />
       </div>
 

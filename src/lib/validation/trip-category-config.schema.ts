@@ -17,6 +17,7 @@ export const tripCategoryConfigSchema = z.object({
   currencies: z.array(currencyItem).max(20),
   tip_categories: z.array(categoryItem).max(50),
   budget_categories: z.array(categoryItem).max(50),
+  packing_categories: z.array(categoryItem).max(50),
 });
 
 export type TripCategoryConfigInput = z.infer<typeof tripCategoryConfigSchema>;

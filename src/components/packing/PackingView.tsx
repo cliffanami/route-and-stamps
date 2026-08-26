@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
+import { useTrip } from "@/lib/queries/use-trip";
 import { useTripMembers } from "@/lib/queries/use-trip-members";
 import {
   useTogglePackingItem,
@@ -30,6 +31,7 @@ interface PackingViewProps {
 // The matrix makes "one task, tracked independently per person" legible
 // at a glance instead (ROADMAP.md's packing-matrix follow-up).
 export function PackingView({ tripId }: PackingViewProps) {
+  const { data: trip } = useTrip(tripId);
   const { data: items = [], isLoading, error } = usePackingItems(tripId);
   const { data: checks = [] } = usePackingItemChecks(tripId);
   const { data: members = [] } = useTripMembers(tripId);
@@ -110,6 +112,7 @@ export function PackingView({ tripId }: PackingViewProps) {
           checks={checks}
           members={members}
           currentUserId={userId}
+          categories={trip?.packing_categories ?? []}
           onToggleShared={(item, checked) =>
             toggleShared.mutate({ id: item.id, isChecked: checked })
           }
@@ -141,6 +144,7 @@ export function PackingView({ tripId }: PackingViewProps) {
           <PackingForm
             tripId={tripId}
             item={editingItem ?? undefined}
+            categories={trip?.packing_categories ?? []}
             onDone={closeFormDialog}
           />
         </Dialog>

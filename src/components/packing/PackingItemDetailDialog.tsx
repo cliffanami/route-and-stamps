@@ -53,6 +53,8 @@ export function PackingItemDetailDialog({
             </Tag>
           </div>
 
+          {item.description && <p>{item.description}</p>}
+
           {item.due_date && (
             <p className="text-muted">
               Due{" "}
