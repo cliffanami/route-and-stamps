@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card, CardTitle, CardBody, CardMeta } from "@/components/ui/Card";
 import { MarkdownText } from "@/components/ui/MarkdownText";
+import { formatPlainDate } from "@/lib/text/format-plain-date";
 import { Tag } from "@/components/ui/Tag";
 import { VoteScale, VOTE_LEVEL_LABEL } from "@/components/places/VoteScale";
 import { MEAL_TAG_LABEL } from "@/components/places/MealTagPicker";
@@ -73,6 +74,11 @@ export function PlaceRow({
       {place.town && <CardMeta>{place.town}</CardMeta>}
       {place.note && <CardBody><MarkdownText text={place.note} /></CardBody>}
       {consensus && <Tag variant="accent">Mutual must go</Tag>}
+      {place.date && (
+        <Tag variant="neutral">
+          {formatPlainDate(place.date, { weekday: "short", month: "short", day: "numeric" })}
+        </Tag>
+      )}
       {place.is_accommodation && <Tag variant="neutral">Accommodation</Tag>}
       {place.meal_tags.map((tag) => (
         <Tag key={tag} variant="neutral">

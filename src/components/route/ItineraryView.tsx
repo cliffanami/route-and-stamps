@@ -1,23 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { formatPlainDate } from "@/lib/text/format-plain-date";
 import type { Place } from "@/types/database.types";
 
 interface ItineraryViewProps {
   tripId: string;
   places: Place[];
-}
-
-// place.date is a plain "YYYY-MM-DD" string (no time component) — parsed as
-// local calendar parts, not fed straight to `new Date()`, so the displayed
-// day never shifts by one from a UTC-vs-local interpretation of a bare date.
-function formatDate(iso: string) {
-  const [year, month, day] = iso.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
 }
 
 // A day-by-day view derived from places' own dates (ROADMAP.md Milestone
@@ -48,7 +37,7 @@ export function ItineraryView({ tripId, places }: ItineraryViewProps) {
       <h2>Day by day</h2>
       {sortedDates.map((date) => (
         <div key={date} className="flex flex-col gap-1">
-          <h3>{formatDate(date)}</h3>
+          <h3>{formatPlainDate(date, { weekday: "short", month: "short", day: "numeric" })}</h3>
           <ul className="flex flex-col gap-1">
             {byDate.get(date)!.map((place) => (
               <li key={place.id}>
