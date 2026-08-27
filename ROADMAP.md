@@ -481,6 +481,8 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 **Acceptance:** a place can carry an optional date (verified: set via Place Detail, persists after reload); a new view groups places by date into a day-by-day itinerary, with undated places shown separately (verified: two-voter test, chronological grouping, undated bucket); reaching mutual "must go" consensus on a place prompts whoever's vote completed it for a date — verified live with two separate signed-in browser sessions: the first voter (not yet mutual) sees no prompt, the second voter (completing consensus) sees it, saving a date persists it and it appears correctly grouped in the itinerary view on reload; skipping doesn't block anything.
 
+**Follow-up fix (2026-08-27):** live-usage feedback — a place's saved date wasn't shown anywhere near the place itself, only in the separate Itinerary view. Now displayed as a tag on both Place Detail and the Route page's place cards; the plain-date-string parsing was factored into a shared `src/lib/text/format-plain-date.ts` (avoids a UTC-vs-local day-shift bug), reused by `ItineraryView` too.
+
 ---
 
 ### X — Tomorrow banner and a working daily cron — shipped (2026-08-26)
