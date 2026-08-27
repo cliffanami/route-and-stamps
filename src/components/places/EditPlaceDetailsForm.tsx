@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
-import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { RichTextEditorLoader as RichTextEditor } from "@/components/ui/RichTextEditorLoader";
 import { useToast } from "@/components/ui/Toast";
 import {
   LocationSearchField,

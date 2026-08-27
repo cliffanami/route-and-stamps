@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { RichTextEditorLoader as RichTextEditor } from "@/components/ui/RichTextEditorLoader";
 import { useToast } from "@/components/ui/Toast";
 import { useUpdateStopLogistics } from "@/lib/queries/use-stops";
 import type { Stop, TransportCostStatus } from "@/types/database.types";

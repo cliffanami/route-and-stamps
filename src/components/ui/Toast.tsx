@@ -43,6 +43,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         className="fixed inset-x-0 top-0 z-50 flex flex-col items-center gap-2 p-4"
+        style={{ pointerEvents: "none" }}
         aria-live="polite"
         role="status"
       >
@@ -53,6 +54,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             style={{
               background: "var(--color-accent-100)",
               color: "var(--color-accent-800)",
+              pointerEvents: "auto",
             }}
           >
             <CheckCircle weight="duotone" size={20} />
