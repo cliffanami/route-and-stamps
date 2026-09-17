@@ -523,6 +523,22 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
+### AA — Luggage forwarding & laundry notes on places — shipped (2026-09-17)
+
+**Goal:** live-usage feedback, sourced from a real operator document for the Japan trip's luggage-forwarding plan (Kyoto→Oasa via a Yamato counter, Hiroshima→Tokyo via hotel staff) plus per-hotel laundry availability. Not every country has a service like Yamato, so this needs to be generic and entirely optional — a trip that never uses it shouldn't even see the option, not just an empty field to ignore.
+
+- **`trips.luggage_forwarding_enabled`** (boolean, default `false`) — a Trip Settings toggle, same section as the other per-trip config (categories, transport modes). Off by default; a trip that'll never use forwarding never sees the feature surface at all, rather than relying on nobody filling in an unused field.
+- **`places.forward_to_place_id`** (nullable, self-referencing FK to another place in the same trip) — "this place's luggage goes to that place." Set on the origin accommodation place; no assumptions about carrier, country, or method baked into the schema.
+- **`places.forwarding_note`** (nullable text) — free-form logistics detail: which counter, who to ask, how to pay. Whatever the local equivalent of "Yamato Transport counter near Kyoto Station, pay with Suica" is, or isn't, wherever the trip happens to be.
+- **`places.laundry_note`** (nullable text) — a separate, ungated field — laundry availability is a globally relevant question for any hotel on any trip, not a Japan-specific convenience the way courier luggage-forwarding is, so it isn't behind the trip-level toggle. Same reasoning as forwarding_note otherwise: a note captures presence/absence/detail in one field, no separate boolean needed.
+- Editable in `EditPlaceDetailsForm` — the "Luggage forwarded to" picker (sourced from the trip's *other* accommodation places — not every place, forwarding is hotel-to-hotel) and its note only render when `trip.luggage_forwarding_enabled` is true. The laundry note field always renders. UI convention restricts the forwarding picker to accommodation places, not a DB constraint — matches how `is_accommodation` itself isn't hard-enforced elsewhere.
+- **Place Detail display**: origin place shows "🧳 Forwarded to [destination place]" with the note and a link; the destination place shows the reverse ("📦 Expect luggage from [origin place]") — derived by querying `forward_to_place_id` backwards at render time, not a second stored field. Already-entered forwarding data still displays even if the trip-level toggle is later switched off — the toggle only gates the *editing* affordance, never hides real data.
+- Packing-list integration (e.g. a "pack light" reminder tied to the skipped stops) is explicitly out of scope for this pass — a real follow-up if it turns out to matter, not bundled in now.
+
+**Acceptance:** a trip has a Trip Settings toggle for luggage forwarding, off by default; with it off, Place edit forms show no forwarding picker at all; with it on, an accommodation place can optionally be linked to another accommodation place as its forwarding destination, with a free-text note; the origin place shows the forwarding indicator and note, the destination place shows the reverse indicator, without a second field to keep in sync; a place can independently carry an optional laundry note (regardless of the toggle), shown on its Detail page when set. Verified live end-to-end: picker hidden with the toggle off, appears once switched on, offers only the trip's other accommodation places (never itself), both directions of the indicator render correctly after saving, and turning the toggle back off leaves already-entered forwarding data visible rather than hiding it.
+
+---
+
 ### Deferred — not scoped yet
 
 **Dashboard / trip-list layer.** The layer above a single trip — a landing page listing every trip you're in, search, and stat cards (trips planned/done/upcoming to start, later km covered and who you traveled with). Genuinely doesn't exist today: `/trips` just grabs your first trip and redirects straight into it, no list view at all. This is the concrete first slice of the "Multi-trip accounts" line already sitting in Beyond M9 below — explicit call to give it its own dedicated scoping session (same treatment Milestone G got) rather than sketch it in passing alongside smaller items.

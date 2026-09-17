@@ -14,7 +14,7 @@ import {
 import { MealTagPicker } from "./MealTagPicker";
 import { AccommodationToggle } from "./AccommodationToggle";
 import { useStops } from "@/lib/queries/use-stops";
-import { useUpdatePlace } from "@/lib/queries/use-places";
+import { usePlaces, useUpdatePlace } from "@/lib/queries/use-places";
 import { nearestStop } from "@/lib/geo/nearest-stop";
 import type { MealTag, Place } from "@/types/database.types";
 
@@ -33,6 +33,10 @@ interface Located {
 interface EditPlaceDetailsFormProps {
   tripId: string;
   place: Place;
+  // Gates the "Luggage forwarded to" picker (ROADMAP.md Milestone AA) — a
+  // plain boolean, not the whole Trip object, matching how TipForm receives
+  // `categories: string[]` rather than `trip` itself.
+  luggageForwardingEnabled: boolean;
   onDone: () => void;
 }
 
@@ -44,9 +48,11 @@ interface EditPlaceDetailsFormProps {
 export function EditPlaceDetailsForm({
   tripId,
   place,
+  luggageForwardingEnabled,
   onDone,
 }: EditPlaceDetailsFormProps) {
   const { data: stops = [] } = useStops(tripId);
+  const { data: places = [] } = usePlaces(tripId);
   const updatePlace = useUpdatePlace(tripId);
   const { showToast } = useToast();
   const {
@@ -69,7 +75,17 @@ export function EditPlaceDetailsForm({
   const [date, setDate] = useState(place.date ?? "");
   const [mealTags, setMealTags] = useState<MealTag[]>(place.meal_tags);
   const [isAccommodation, setIsAccommodation] = useState(place.is_accommodation);
+  const [forwardToPlaceId, setForwardToPlaceId] = useState(
+    place.forward_to_place_id ?? "",
+  );
+  const [forwardingNote, setForwardingNote] = useState(place.forwarding_note ?? "");
+  const [laundryNote, setLaundryNote] = useState(place.laundry_note ?? "");
   const [error, setError] = useState<string | null>(null);
+
+  // Hotel-to-hotel only, and never itself (ROADMAP.md Milestone AA).
+  const forwardingDestinationOptions = places.filter(
+    (p) => p.is_accommodation && p.id !== place.id,
+  );
 
   async function handleSearchSelect(result: LocationSearchResult) {
     setName(result.label.split(",")[0].trim());
@@ -107,6 +123,9 @@ export function EditPlaceDetailsForm({
         date: date || null,
         meal_tags: mealTags,
         is_accommodation: isAccommodation,
+        forward_to_place_id: forwardToPlaceId || null,
+        forwarding_note: forwardingNote.trim() || null,
+        laundry_note: laundryNote.trim() || null,
       });
       showToast("Place updated");
       onDone();
@@ -167,6 +186,51 @@ export function EditPlaceDetailsForm({
 
       <MealTagPicker value={mealTags} onChange={setMealTags} />
       <AccommodationToggle checked={isAccommodation} onChange={setIsAccommodation} />
+
+      {luggageForwardingEnabled && (
+        <>
+          <div className="field">
+            <label htmlFor="edit-place-forward-to">Luggage forwarded to (optional)</label>
+            <select
+              id="edit-place-forward-to"
+              className="input"
+              value={forwardToPlaceId}
+              onChange={(event) => setForwardToPlaceId(event.target.value)}
+            >
+              <option value="">— None —</option>
+              {forwardingDestinationOptions.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {forwardToPlaceId && (
+            <div className="field">
+              <label htmlFor="edit-place-forwarding-note">Forwarding details (optional)</label>
+              <input
+                id="edit-place-forwarding-note"
+                className="input"
+                placeholder="Which counter, who to ask, how to pay"
+                value={forwardingNote}
+                onChange={(event) => setForwardingNote(event.target.value)}
+              />
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="field">
+        <label htmlFor="edit-place-laundry-note">Laundry (optional)</label>
+        <input
+          id="edit-place-laundry-note"
+          className="input"
+          placeholder="e.g. washer/dryer available on-site"
+          value={laundryNote}
+          onChange={(event) => setLaundryNote(event.target.value)}
+        />
+      </div>
 
       <div className="field">
         <label htmlFor="edit-place-note">Note (optional)</label>

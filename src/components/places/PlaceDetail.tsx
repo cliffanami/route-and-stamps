@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
@@ -24,7 +25,7 @@ import { BudgetForm } from "@/components/budget/BudgetForm";
 import { CostLineRow } from "@/components/budget/CostLineRow";
 import { TipCard } from "@/components/tips/TipCard";
 import { TipForm } from "@/components/tips/TipForm";
-import { usePlace, useDeletePlace } from "@/lib/queries/use-places";
+import { usePlace, usePlaces, useDeletePlace } from "@/lib/queries/use-places";
 import { useVotes, useCastVote } from "@/lib/queries/use-votes";
 import { useTripMembers } from "@/lib/queries/use-trip-members";
 import { useCurrentUserId } from "@/lib/queries/use-current-user";
@@ -95,6 +96,7 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const { data: tips = [] } = useTips(tripId);
   const { data: trip } = useTrip(tripId);
   const { data: placeCheckins = [] } = usePlaceCheckins(tripId);
+  const { data: places = [] } = usePlaces(tripId);
 
   if (isLoading) return <p className="px-6 py-4 text-muted">Loading…</p>;
   if (!place) return <p className="px-6 py-4 text-muted">Place not found.</p>;
@@ -113,6 +115,14 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const proposedBy = members.find((m) => m.user_id === place.added_by)?.displayName;
   const placeCosts = budgetLines.filter((line) => line.place_id === placeId);
   const placeTips = tips.filter((tip) => tip.related_place_id === placeId);
+  // Reverse lookup, not a second stored field (ROADMAP.md Milestone AA) —
+  // any place whose own forward_to_place_id points at this one.
+  const forwardingDestination = place.forward_to_place_id
+    ? places.find((p) => p.id === place.forward_to_place_id)
+    : undefined;
+  const forwardedFromPlaces = places.filter(
+    (p) => p.forward_to_place_id === placeId,
+  );
 
   const costDialogOpen = addingCost || editingCost !== null;
   function closeCostDialog() {
@@ -174,6 +184,7 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
         <EditPlaceDetailsForm
           tripId={tripId}
           place={place}
+          luggageForwardingEnabled={trip?.luggage_forwarding_enabled ?? false}
           onDone={() => setEditing(false)}
         />
 
@@ -227,6 +238,26 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
       )}
       {proposedBy && <p className="text-muted">Proposed by {proposedBy}</p>}
       {place.note && <MarkdownText text={place.note} />}
+
+      {forwardingDestination && (
+        <p className="text-muted">
+          🧳 Forwarded to{" "}
+          <Link href={`/trips/${tripId}/places/${forwardingDestination.id}`}>
+            {forwardingDestination.name}
+          </Link>
+          {place.forwarding_note && ` — ${place.forwarding_note}`}
+        </p>
+      )}
+      {forwardedFromPlaces.map((origin) => (
+        <p key={origin.id} className="text-muted">
+          📦 Expect luggage from{" "}
+          <Link href={`/trips/${tripId}/places/${origin.id}`}>{origin.name}</Link>
+          {origin.forwarding_note && ` — ${origin.forwarding_note}`}
+        </p>
+      ))}
+      {place.laundry_note && (
+        <p className="text-muted">🧺 Laundry: {place.laundry_note}</p>
+      )}
 
       {consensus && <Tag variant="accent">Mutual must go</Tag>}
       {(place.is_accommodation || place.meal_tags.length > 0) && (

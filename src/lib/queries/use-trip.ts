@@ -12,6 +12,10 @@ import {
   tripCategoryConfigSchema,
   type TripCategoryConfigInput,
 } from "@/lib/validation/trip-category-config.schema";
+import {
+  tripLogisticsSchema,
+  type TripLogisticsInput,
+} from "@/lib/validation/trip-logistics.schema";
 import type { Trip } from "@/types/database.types";
 
 export function useTrip(tripId: string) {
@@ -90,6 +94,28 @@ export function useUpdateTripDetails(tripId: string) {
   return useMutation({
     mutationFn: async (input: TripDetailsInput) => {
       const parsed = tripDetailsSchema.parse(input);
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("trips")
+        .update(parsed)
+        .eq("id", tripId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trip", tripId] });
+    },
+  });
+}
+
+// Its own mutation, not folded into useUpdateTripDetails/
+// useUpdateTripCategoryConfig — same "one concern, one schema/mutation"
+// pattern those two already establish (ROADMAP.md Milestone AA).
+export function useUpdateTripLogistics(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: TripLogisticsInput) => {
+      const parsed = tripLogisticsSchema.parse(input);
       const supabase = createClient();
       const { error } = await supabase
         .from("trips")

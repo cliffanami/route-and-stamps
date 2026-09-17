@@ -144,6 +144,9 @@ export function ChatDrawer({ tripId, open, onClose }: ChatDrawerProps) {
           date: null,
           meal_tags: [],
           is_accommodation: false,
+          forward_to_place_id: null,
+          forwarding_note: null,
+          laundry_note: null,
         });
         return top
           ? `Added "${input.name}".`

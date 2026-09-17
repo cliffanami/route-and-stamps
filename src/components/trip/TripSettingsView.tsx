@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useTrip, useUpdateTripCategoryConfig } from "@/lib/queries/use-trip";
+import {
+  useTrip,
+  useUpdateTripCategoryConfig,
+  useUpdateTripLogistics,
+} from "@/lib/queries/use-trip";
 import { useToast } from "@/components/ui/Toast";
 import { TripDetailsForm } from "./TripDetailsForm";
 import { TagListEditor } from "./TagListEditor";
@@ -45,6 +49,8 @@ export function TripSettingsView({ tripId }: TripSettingsViewProps) {
       </div>
 
       <CategoryConfigSection tripId={tripId} trip={trip} />
+
+      <LogisticsSection tripId={tripId} trip={trip} />
 
       <div className="flex flex-col gap-3">
         <h2>Account</h2>
@@ -113,6 +119,35 @@ function CategoryConfigSection({ tripId, trip }: { tripId: string; trip: Trip })
         onChange={(packing_categories) => save({ packing_categories })}
         placeholder="Electronics"
       />
+    </div>
+  );
+}
+
+// Off by default — most trips never use a courier luggage-forwarding
+// service, so the picker on each accommodation place's edit form stays
+// hidden until this is switched on (ROADMAP.md Milestone AA). Toggling
+// this off again only hides the *editing* affordance — any forwarding
+// already entered keeps showing on Place Detail.
+function LogisticsSection({ tripId, trip }: { tripId: string; trip: Trip }) {
+  const updateLogistics = useUpdateTripLogistics(tripId);
+  const { showToast } = useToast();
+
+  return (
+    <div className="flex flex-col gap-3">
+      <h2>Logistics</h2>
+      <label className="field flex flex-row items-center gap-2">
+        <input
+          type="checkbox"
+          checked={trip.luggage_forwarding_enabled}
+          onChange={(event) =>
+            updateLogistics.mutate(
+              { luggage_forwarding_enabled: event.target.checked },
+              { onError: () => showToast("Couldn't save — try again.") },
+            )
+          }
+        />
+        Luggage forwarding available on this trip
+      </label>
     </div>
   );
 }

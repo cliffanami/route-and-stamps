@@ -52,6 +52,10 @@ export interface Trip {
   start_date: string | null;
   end_date: string | null;
   is_international: boolean;
+  // Gates the "Luggage forwarded to" picker in EditPlaceDetailsForm, not
+  // the display of already-entered forwarding data (ROADMAP.md Milestone
+  // AA) — off by default, most trips never touch this.
+  luggage_forwarding_enabled: boolean;
   budget_mode: BudgetMode;
   budget_cap: number | null;
   budget_cap_currency: string | null;
@@ -86,6 +90,15 @@ export interface Place {
   booking_status: BookingStatus;
   meal_tags: MealTag[];
   is_accommodation: boolean;
+  // Generic, optional, hotel-to-hotel — no carrier/country assumptions
+  // (ROADMAP.md Milestone AA). Set on the origin place; the destination
+  // place's "expect luggage from" indicator is a reverse lookup, not a
+  // second stored field.
+  forward_to_place_id: string | null;
+  forwarding_note: string | null;
+  // Independent of forwarding — laundry availability is relevant for any
+  // hotel on any trip, not gated behind trips.luggage_forwarding_enabled.
+  laundry_note: string | null;
   needs_name: boolean;
   added_by: string;
   created_at: string;

@@ -192,6 +192,11 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
       // Not settable at creation — added later via Place Detail's edit form
       // or the mutual-must-go date prompt (ROADMAP.md Milestone W).
       date: null,
+      // Not settable at creation — added later once both hotels exist
+      // (ROADMAP.md Milestone AA).
+      forward_to_place_id: null,
+      forwarding_note: null,
+      laundry_note: null,
     });
     reset();
     setName("");

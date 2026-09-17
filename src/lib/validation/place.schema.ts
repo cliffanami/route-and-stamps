@@ -26,6 +26,13 @@ export const placeSchema = z.object({
   // follow-up). Auto-associates with a stop via the place's own
   // nearest_stop_id, same as any other place.
   is_accommodation: z.boolean().default(false),
+  // Generic, optional, hotel-to-hotel — no carrier/country assumptions
+  // (ROADMAP.md Milestone AA). Not settable at creation, same as date —
+  // added later via Place Detail's edit form once both hotels exist.
+  forward_to_place_id: z.string().uuid().nullable(),
+  forwarding_note: z.string().trim().max(2000).nullable(),
+  // Independent of forwarding — relevant for any hotel on any trip.
+  laundry_note: z.string().trim().max(2000).nullable(),
 });
 
 export type PlaceInput = z.infer<typeof placeSchema>;
