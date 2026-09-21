@@ -550,14 +550,13 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
-### AC — Photo upload on Add-a-Place
+### AC — Photo upload on Add-a-Place — shipped (2026-09-21)
 
 **Goal:** `PhotoUpload` exists and works, but is only wired into the *edit* flow (`PlaceDetail.tsx`) — `PlaceForm.tsx` (the add flow) has no image field at all today. Live-usage feedback: confirmed gap, not intentional scope.
 
-- **Real technical wrinkle, not just a missing import**: `PhotoUpload` uploads immediately on file selection and requires a `placeId` — which doesn't exist until the place row is actually created. Two ways to handle it: (a) a two-step add flow — after "Add place" succeeds, show a brief "Place added — add a photo now?" step with `PhotoUpload` wired to the new place's real id, or (b) stage the file locally as a plain `File` in form state and defer the actual upload until immediately after creation succeeds (more seamless, more new code — `PhotoUpload` would need a "deferred" mode it doesn't have today).
-- Default to (a) — reuses `PhotoUpload` completely unchanged, no new upload-deferral logic, and "your place was added, want a photo?" is a well-understood, common pattern. Flagging (b) as the alternative to confirm before building if the two-step flow feels wrong in practice.
+- **Real technical wrinkle, not just a missing import**: `PhotoUpload` uploads immediately on file selection and requires a `placeId` — which doesn't exist until the place row is actually created. Built as (a), the default proposed in scoping: `PlaceForm`'s submit now captures `useAddPlace`'s return value; on a real success (not the offline-queue fallback, which has no id yet) it shows a "'[name]' added." card with `PhotoUpload` wired to the new place's real id and a "Done" button, right where the form was — no new upload-deferral logic, `PhotoUpload` unchanged.
 
-**Acceptance:** adding a new place offers a way to attach a photo without a separate trip back to the edit screen afterward.
+**Acceptance:** adding a new place offers a way to attach a photo without a separate trip back to the edit screen afterward — verified live end-to-end: no photo step before submitting, the confirmation-plus-upload card appears immediately after saving, uploading a real image succeeds and persists (confirmed via direct database query that `photo_url` was set), and "Done" dismisses the card.
 
 ---
 

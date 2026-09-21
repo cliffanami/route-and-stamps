@@ -5,8 +5,10 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
+import { Card, CardBody } from "@/components/ui/Card";
 import { RichTextEditorLoader as RichTextEditor } from "@/components/ui/RichTextEditorLoader";
 import { DuplicateNudge } from "./DuplicateNudge";
+import { PhotoUpload } from "./PhotoUpload";
 import { MealTagPicker } from "./MealTagPicker";
 import { AccommodationToggle } from "./AccommodationToggle";
 import {
@@ -82,6 +84,11 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
   const [duplicates, setDuplicates] = useState<Place[]>([]);
   const [mealTags, setMealTags] = useState<MealTag[]>([]);
   const [isAccommodation, setIsAccommodation] = useState(false);
+  // PhotoUpload needs a real placeId, which doesn't exist until the place
+  // row is created — so a photo can't be part of this same submit, only
+  // offered right after it succeeds (ROADMAP.md Milestone AC). Stays null
+  // if the add fell back to the offline queue (no real id yet).
+  const [justAdded, setJustAdded] = useState<Place | null>(null);
 
   // Shared by both the live-search dropdown and the explicit "Find
   // location" button below it — same "found a coordinate" tail: refine
@@ -179,7 +186,7 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
       return;
     }
 
-    await addPlace.mutateAsync({
+    const result = await addPlace.mutateAsync({
       name,
       source_url: values.source_url || null,
       note: values.note || null,
@@ -198,6 +205,7 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
       forwarding_note: null,
       laundry_note: null,
     });
+    setJustAdded(result ?? null);
     reset();
     setName("");
     setLocated(null);
@@ -281,6 +289,16 @@ export function PlaceForm({ tripId, initialSourceUrl }: PlaceFormProps) {
           )}
         />
       </div>
+
+      {justAdded && (
+        <Card>
+          <CardBody>&ldquo;{justAdded.name}&rdquo; added.</CardBody>
+          <PhotoUpload tripId={tripId} placeId={justAdded.id} />
+          <Button type="button" variant="ghost" onClick={() => setJustAdded(null)}>
+            Done
+          </Button>
+        </Card>
+      )}
 
       <Button type="submit" variant="primary" disabled={isSubmitting}>
         Save place
