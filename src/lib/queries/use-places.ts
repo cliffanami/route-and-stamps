@@ -220,6 +220,37 @@ export function useSetPlaceDate(tripId: string) {
   });
 }
 
+// Same narrow-single-field shape as useSetPlaceDate — the Route page's
+// Unassigned section (ROADMAP.md Milestone AB) needs a quick "assign to a
+// stop" picker that doesn't require going through every other editable
+// field on the place.
+export function useSetPlaceNearestStop(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      placeId,
+      nearestStopId,
+    }: {
+      placeId: string;
+      nearestStopId: string | null;
+    }) => {
+      const parsed = placeSchema
+        .pick({ nearest_stop_id: true })
+        .parse({ nearest_stop_id: nearestStopId });
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("places")
+        .update(parsed)
+        .eq("id", placeId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["places", tripId] });
+    },
+  });
+}
+
 // Uploads a photo to the private place-photos bucket (ROADMAP.md M2) and
 // records its Storage object path — not a fetchable URL, since the bucket
 // is private (PRD §12c); usePlacePhotoUrl resolves a signed URL for display.

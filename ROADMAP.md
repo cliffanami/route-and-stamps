@@ -539,6 +539,79 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
+### AB — Unassigned places, restructured — shipped (2026-09-21)
+
+**Goal:** the Route page's "Unassigned" section (any place with no `nearest_stop_id`) is a flat list at the bottom of the page today — easy to lose track of, no nudge to actually resolve it. Live-usage feedback: "needs better structure."
+
+- Collapsible, same pattern Milestone Q already established for `PackingMatrix`'s category sections — a chevron-toggled heading (now shows a live count, e.g. "Unassigned (3)"), expanded by default, session-local collapse state.
+- A clearer call-to-action per unassigned place: an inline "Assign to a stop" picker right in the Unassigned list — selecting a stop immediately moves the place there, no trip to the edit form required. New narrow single-field mutation, `useSetPlaceNearestStop` (same shape as `useSetPlaceDate` — `useUpdatePlace`'s schema requires every editable field, not just the one being changed).
+
+**Acceptance:** the Unassigned section can be collapsed/expanded like every other section on the Route page, with a live count in the heading; each unassigned place has an inline stop picker — verified live end-to-end: selecting a stop persists to the database immediately (confirmed via direct query), the place moves out of Unassigned and under its new stop, and the assignment survives a full page reload.
+
+---
+
+### AC — Photo upload on Add-a-Place
+
+**Goal:** `PhotoUpload` exists and works, but is only wired into the *edit* flow (`PlaceDetail.tsx`) — `PlaceForm.tsx` (the add flow) has no image field at all today. Live-usage feedback: confirmed gap, not intentional scope.
+
+- **Real technical wrinkle, not just a missing import**: `PhotoUpload` uploads immediately on file selection and requires a `placeId` — which doesn't exist until the place row is actually created. Two ways to handle it: (a) a two-step add flow — after "Add place" succeeds, show a brief "Place added — add a photo now?" step with `PhotoUpload` wired to the new place's real id, or (b) stage the file locally as a plain `File` in form state and defer the actual upload until immediately after creation succeeds (more seamless, more new code — `PhotoUpload` would need a "deferred" mode it doesn't have today).
+- Default to (a) — reuses `PhotoUpload` completely unchanged, no new upload-deferral logic, and "your place was added, want a photo?" is a well-understood, common pattern. Flagging (b) as the alternative to confirm before building if the two-step flow feels wrong in practice.
+
+**Acceptance:** adding a new place offers a way to attach a photo without a separate trip back to the edit screen afterward.
+
+---
+
+### AD — Trip countdown
+
+**Goal:** live-usage feedback: "add x days until this trip countdown." Simple, using data that already exists.
+
+- A "X days until your trip" display near the top of the Route page, alongside the Tomorrow banner (Milestone X) — computed from `trips.start_date`, which already exists and is already required for a trip to have any dated stops/places at all.
+- Counts down before the trip; once started (today falls within the trip's date range), switches to something like "Day N of the trip" instead of a countdown to zero or a negative number. After the trip ends, shows nothing (or a wrap-up state, TBD at build time — not worth a scoping question, low-stakes UI choice).
+- `trips.start_date` is nullable — same "return null, show nothing" handling `TomorrowBanner` already uses for its own missing-data case, not a broken/NaN countdown.
+
+**Acceptance:** the Route page shows a live countdown before the trip starts, something sensible instead of a meaningless number once it's underway, verified against `trips.start_date`; a trip with no start date shows no countdown at all rather than a broken one.
+
+---
+
+### AE — Todo list (place/phase-taggable)
+
+**Goal:** live-usage feedback, scoped via discussion: one todo list, not two separate features — a todo can optionally link to a specific place ("buy tickets before visiting X") and/or a trip phase (pre-trip / during / post-trip), both tags optional, neither required. This is genuinely new — nothing like it exists today (Tips is advice/reference, Packing is physical items, this is *actions to take*).
+
+- New `todos` table: `id, trip_id, text, is_done boolean, due_date date (nullable), related_place_id uuid (nullable, references places), phase todo_phase (nullable enum: pre_trip/during_trip/post_trip), added_by, created_at`. RLS via the same `is_trip_member(trip_id)` policy pattern every other trip-scoped table already uses — not a new access model to design.
+- A new todo fires a low-priority, digest-eligible notification (`is_instant=false`) via `notify_trip_members()`, matching the existing `tips_notify_added`/`places_notify_added` precedent — "someone added something to the trip" is the same class of event, not a new notification concept. Completing a todo doesn't notify, matching how checking a packing item off doesn't either.
+- **Judgment call, flagging rather than silently deciding**: shared-only completion (one `is_done` flag, same as a packing item's shared checkbox), not per-person tracking like `packing_item_checks` — a todo like "apply for visa" is naturally a one-time trip action, not something each person independently tracks for themselves the way packing your own bag is. If per-person tracking turns out to matter in practice, `packing_item_checks`' exact pattern is right there to copy later.
+- New Todo section — list view, optional grouping by phase (mirroring Tips' category-chip-filter pattern, not a hard requirement to build a whole new grouping UI from scratch), add/edit form with the place picker and phase select both optional.
+- `due_date` exists on the todo from the start, even though nothing consumes it yet — Milestone AF (calendar export) is sequenced right after this and depends on it existing.
+- **Navigation, resolved**: no new nav entry. `BottomNav`'s "Packing" tab is relabeled "Checklists" (the URL segment stays `packing` — no route rename, no broken links/bookmarks, purely a label change), and that page gets two sections, Todo and Packing, sitting alongside each other — same segmented-tab pattern (`.seg`) already used elsewhere (Overview/Places/Tips/Costs on Stop/Place Detail) rather than a new UI mechanism. Keeps BottomNav at 6 items, no touch-target re-check needed.
+
+**Acceptance:** a todo can be added with just text and nothing else, or with an optional place link, an optional phase, and an optional due date in any combination; it shows up appropriately wherever it's tagged (on the place's own page if place-linked, in its phase's section if phase-tagged); marking it done is a single shared toggle; the "Packing" bottom-nav tab is relabeled "Checklists" and shows both Todo and Packing as sections on the same page.
+
+---
+
+### AF — Add to calendar (stops + scheduled todos)
+
+**Goal:** live-usage feedback: "work with native calendars." Sequenced after Milestone AE — todos need a real `due_date` to be calendar-addable, which AE establishes.
+
+- Per-stop "Add to calendar" using data that already exists (`start_date`/`end_date`/`arrival_time`, Milestones D/W) — generates a `.ics` file (works with any calendar app, including native iOS/Android) or a Google Calendar prefilled-event link. No new scheduling concept for stops.
+- Per-todo "Add to calendar", but only for a todo that actually has a `due_date` set (Milestone AE) — a todo with no date has nothing to put on a calendar.
+- Exact mechanism (`.ics` download vs. calendar-specific URL schemes vs. both) is an implementation detail to settle at build time — both are keyless, no API/billing account needed either way.
+
+**Acceptance:** a stop's page offers a working "Add to calendar" action using its existing dates; a todo with a due date offers the same; a todo with no due date doesn't show a calendar option that would have nothing to add.
+
+---
+
+### AG — Map bottom sheet
+
+**Goal:** live-usage feedback, narrowed via discussion — not "adopt Google Maps' visual design" (which would conflict with Broadsheet's own established system: one serif typeface, one accent color, no boxes-as-layout), but specifically the *interaction* of a panel sliding up over the map when you tap something, rather than navigating away from the map entirely.
+
+- Tapping a stop or place marker on the main trip map opens a compact panel sliding up from the bottom, over the map (which stays visible/interactive underneath) — name, key info, and quick actions (e.g. "Open in Google Maps," check-in), without a full page navigation. Closing it (tap outside, swipe down, or an explicit close) returns to the plain map view. **Replaces** Milestone M's clickable Leaflet marker popup on the main map, rather than adding a second competing interaction on tap — the small embedded maps elsewhere (`StopAreaMap`/`LocationMapLoader` on Stop Detail/Place Detail) are unaffected, this is scoped to the main Map page only.
+- Styled entirely in Broadsheet's own language — `.card`/`.dialog`-family surface, serif type, the app's single accent color — not Google's visual patterns. The *slides up over the map* mechanic is what's being borrowed, not the look.
+- A full page navigation to Stop Detail / Place Detail (today's behavior) stays available from within the sheet, for anyone who wants the full page rather than the quick panel.
+
+**Acceptance:** tapping a marker on the trip map opens a bottom sheet with that stop/place's key info and quick actions, the map stays visible underneath, and a clear path still exists from the sheet to the full Detail page for anyone who wants it.
+
+---
+
 ### Deferred — not scoped yet
 
 **Dashboard / trip-list layer.** The layer above a single trip — a landing page listing every trip you're in, search, and stat cards (trips planned/done/upcoming to start, later km covered and who you traveled with). Genuinely doesn't exist today: `/trips` just grabs your first trip and redirects straight into it, no list view at all. This is the concrete first slice of the "Multi-trip accounts" line already sitting in Beyond M9 below — explicit call to give it its own dedicated scoping session (same treatment Milestone G got) rather than sketch it in passing alongside smaller items.

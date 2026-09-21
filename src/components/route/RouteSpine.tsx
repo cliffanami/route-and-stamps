@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { PlusCircle } from "@phosphor-icons/react";
+import { CaretDown, CaretUp, PlusCircle } from "@phosphor-icons/react";
 import { useTrip } from "@/lib/queries/use-trip";
 import { useStops } from "@/lib/queries/use-stops";
-import { usePlaces } from "@/lib/queries/use-places";
+import { usePlaces, useSetPlaceNearestStop } from "@/lib/queries/use-places";
 import { useVotes } from "@/lib/queries/use-votes";
 import { useTips } from "@/lib/queries/use-tips";
 import { useStopCheckins } from "@/lib/queries/use-stop-checkins";
@@ -51,6 +51,8 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
   const [hideSkipped, setHideSkipped] = useState(false);
   const [addingStop, setAddingStop] = useState(false);
   const [datePromptPlace, setDatePromptPlace] = useState<Place | null>(null);
+  const [unassignedCollapsed, setUnassignedCollapsed] = useState(false);
+  const setNearestStop = useSetPlaceNearestStop(tripId);
 
   const memberIds = members.map((m) => m.user_id);
 
@@ -166,20 +168,59 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
 
       {unassigned.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2>Unassigned</h2>
-          <div className="flex flex-col gap-3">
-            {unassigned.map((place) => (
-              <PlaceRow
-                key={place.id}
-                tripId={tripId}
-                place={place}
-                votes={votes}
-                currentUserId={userId}
-                members={members}
-                onMustGoConsensus={setDatePromptPlace}
-              />
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => setUnassignedCollapsed((current) => !current)}
+            aria-expanded={!unassignedCollapsed}
+            aria-label={unassignedCollapsed ? "Expand Unassigned" : "Collapse Unassigned"}
+            className="flex items-center gap-1"
+          >
+            {unassignedCollapsed ? (
+              <CaretDown weight="duotone" size={18} />
+            ) : (
+              <CaretUp weight="duotone" size={18} />
+            )}
+            <h2>Unassigned ({unassigned.length})</h2>
+          </button>
+          {!unassignedCollapsed && (
+            <div className="flex flex-col gap-3">
+              {unassigned.map((place) => (
+                <div key={place.id} className="flex flex-col gap-2">
+                  <PlaceRow
+                    tripId={tripId}
+                    place={place}
+                    votes={votes}
+                    currentUserId={userId}
+                    members={members}
+                    onMustGoConsensus={setDatePromptPlace}
+                  />
+                  {orderedStops.length > 0 && (
+                    <label className="field flex flex-row items-center gap-2">
+                      <span className="text-muted">Assign to a stop:</span>
+                      <select
+                        className="input"
+                        value=""
+                        onChange={(event) => {
+                          if (!event.target.value) return;
+                          setNearestStop.mutate({
+                            placeId: place.id,
+                            nearestStopId: event.target.value,
+                          });
+                        }}
+                      >
+                        <option value="">— Select a stop —</option>
+                        {orderedStops.map((stop) => (
+                          <option key={stop.id} value={stop.id}>
+                            {stop.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
