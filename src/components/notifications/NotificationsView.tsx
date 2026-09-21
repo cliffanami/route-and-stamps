@@ -11,6 +11,7 @@ import {
   Clock,
   SuitcaseRolling,
   UserPlus,
+  CheckSquare,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardMeta } from "@/components/ui/Card";
@@ -78,6 +79,11 @@ const NOTIFICATION_META: Record<
     icon: HandWaving,
     message: (p) => `${p.checker_name} arrived in ${p.stop_name}`,
     href: (tripId, p) => `/trips/${tripId}/stops/${p.stop_id}`,
+  },
+  todo_added: {
+    icon: CheckSquare,
+    message: (p) => `${p.added_by_name} added a todo: ${p.text}`,
+    href: (tripId) => `/trips/${tripId}/packing`,
   },
 };
 

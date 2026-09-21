@@ -17,7 +17,7 @@ const TABS = [
   { segment: "add", label: "Add", icon: PlusCircle },
   { segment: "tips", label: "Tips", icon: Lightbulb },
   { segment: "budget", label: "Budget", icon: Wallet },
-  { segment: "packing", label: "Packing", icon: SuitcaseRolling },
+  { segment: "packing", label: "Checklists", icon: SuitcaseRolling },
 ] as const;
 
 interface BottomNavProps {

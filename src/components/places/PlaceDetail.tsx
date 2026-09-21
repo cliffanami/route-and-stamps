@@ -25,15 +25,18 @@ import { BudgetForm } from "@/components/budget/BudgetForm";
 import { CostLineRow } from "@/components/budget/CostLineRow";
 import { TipCard } from "@/components/tips/TipCard";
 import { TipForm } from "@/components/tips/TipForm";
+import { TodoRow } from "@/components/todos/TodoRow";
+import { TodoForm } from "@/components/todos/TodoForm";
 import { usePlace, usePlaces, useDeletePlace } from "@/lib/queries/use-places";
 import { useVotes, useCastVote } from "@/lib/queries/use-votes";
 import { useTripMembers } from "@/lib/queries/use-trip-members";
 import { useCurrentUserId } from "@/lib/queries/use-current-user";
 import { useBudgetLines, useDeleteBudgetLine } from "@/lib/queries/use-budget-lines";
 import { useTips, useDeleteTip } from "@/lib/queries/use-tips";
+import { useTodos, useDeleteTodo, useToggleTodo } from "@/lib/queries/use-todos";
 import { useTrip } from "@/lib/queries/use-trip";
 import { isMutualMustGo } from "@/components/route/PlaceRow";
-import type { BudgetLine, Tip } from "@/types/database.types";
+import type { BudgetLine, Tip, Todo } from "@/types/database.types";
 
 interface PlaceDetailProps {
   tripId: string;
@@ -83,6 +86,13 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const [deleteTipError, setDeleteTipError] = useState<string | null>(null);
   const deleteTip = useDeleteTip(tripId);
 
+  const [addingTodo, setAddingTodo] = useState(false);
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [confirmingDeleteTodo, setConfirmingDeleteTodo] = useState(false);
+  const [deleteTodoError, setDeleteTodoError] = useState<string | null>(null);
+  const deleteTodo = useDeleteTodo(tripId);
+  const toggleTodo = useToggleTodo(tripId);
+
   // Vote + proposer (ROADMAP.md Milestone B) — the same pattern PlaceRow
   // already shows on the Route page, ported here since this dedicated page
   // had none of it. currentUserId/votes/members are independent fetches;
@@ -94,6 +104,7 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const castVote = useCastVote(tripId);
   const { data: budgetLines = [] } = useBudgetLines(tripId);
   const { data: tips = [] } = useTips(tripId);
+  const { data: todos = [] } = useTodos(tripId);
   const { data: trip } = useTrip(tripId);
   const { data: placeCheckins = [] } = usePlaceCheckins(tripId);
   const { data: places = [] } = usePlaces(tripId);
@@ -115,6 +126,7 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   const proposedBy = members.find((m) => m.user_id === place.added_by)?.displayName;
   const placeCosts = budgetLines.filter((line) => line.place_id === placeId);
   const placeTips = tips.filter((tip) => tip.related_place_id === placeId);
+  const placeTodos = todos.filter((todo) => todo.related_place_id === placeId);
   // Reverse lookup, not a second stored field (ROADMAP.md Milestone AA) —
   // any place whose own forward_to_place_id points at this one.
   const forwardingDestination = place.forward_to_place_id
@@ -134,6 +146,12 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
   function closeTipDialog() {
     setAddingTip(false);
     setEditingTip(null);
+  }
+
+  const todoDialogOpen = addingTodo || editingTodo !== null;
+  function closeTodoDialog() {
+    setAddingTodo(false);
+    setEditingTodo(null);
   }
 
   async function handleDelete() {
@@ -172,6 +190,20 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
     } catch (err) {
       setDeleteTipError(
         err instanceof Error ? err.message : "Couldn't delete that tip — try again.",
+      );
+    }
+  }
+
+  async function handleDeleteTodo() {
+    if (!editingTodo) return;
+    setDeleteTodoError(null);
+    try {
+      await deleteTodo.mutateAsync(editingTodo.id);
+      setConfirmingDeleteTodo(false);
+      closeTodoDialog();
+    } catch (err) {
+      setDeleteTodoError(
+        err instanceof Error ? err.message : "Couldn't delete that todo — try again.",
       );
     }
   }
@@ -319,6 +351,23 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
     </div>
   );
 
+  const todosContent = (
+    <div className="flex flex-col gap-3">
+      {placeTodos.length === 0 ? (
+        <p className="text-muted">No todos for this place yet.</p>
+      ) : (
+        placeTodos.map((todo) => (
+          <TodoRow
+            key={todo.id}
+            todo={todo}
+            onToggle={(isDone) => toggleTodo.mutate({ id: todo.id, isDone })}
+            onEdit={() => setEditingTodo(todo)}
+          />
+        ))
+      )}
+    </div>
+  );
+
   const costsContent = (
     <div className="flex flex-col gap-3">
       {placeCosts.length === 0 ? (
@@ -367,6 +416,13 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
             content: costsContent,
             onAdd: () => setAddingCost(true),
             addLabel: "Add a cost",
+          },
+          {
+            key: "todos",
+            label: "Todos",
+            content: todosContent,
+            onAdd: () => setAddingTodo(true),
+            addLabel: "Add a todo",
           },
         ]}
       />
@@ -442,6 +498,41 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
         description="This can't be undone."
         pending={deleteTip.isPending}
         error={deleteTipError}
+      />
+
+      <Dialog
+        open={todoDialogOpen}
+        onClose={closeTodoDialog}
+        title={editingTodo ? "Edit todo" : "Add a todo"}
+      >
+        <div className="flex flex-col gap-4">
+          <TodoForm
+            tripId={tripId}
+            todo={editingTodo ?? undefined}
+            initialRelatedPlaceId={editingTodo ? undefined : placeId}
+            onDone={closeTodoDialog}
+          />
+          {editingTodo && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmingDeleteTodo(true)}
+            >
+              <Trash weight="duotone" size={20} />
+              Delete todo
+            </Button>
+          )}
+        </div>
+      </Dialog>
+
+      <DeleteConfirmDialog
+        open={confirmingDeleteTodo}
+        onClose={() => setConfirmingDeleteTodo(false)}
+        onConfirm={handleDeleteTodo}
+        title="Delete this todo?"
+        description="This can't be undone."
+        pending={deleteTodo.isPending}
+        error={deleteTodoError}
       />
     </div>
   );

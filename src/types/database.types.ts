@@ -13,9 +13,11 @@ export type BudgetMode = "cap" | "tally";
 export type BudgetStatus = "not_booked" | "pending" | "paid";
 export type NotificationType =
   "consensus_reached" | "place_added" | "tip_added" | "vote_cast" |
-  "arrival_estimated" | "packing_due" | "trip_joined" | "checked_in";
+  "arrival_estimated" | "packing_due" | "trip_joined" | "checked_in" |
+  "todo_added";
 export type TripRole = "owner" | "member";
 export type FunFactSource = "wikipedia" | "manual";
+export type TodoPhase = "pre_trip" | "during_trip" | "post_trip";
 
 export interface Stop {
   id: string;
@@ -240,6 +242,20 @@ export interface FunFact {
   // Null for wikipedia-sourced rows — nothing to attribute a keyless API
   // lookup to.
   added_by: string | null;
+  created_at: string;
+}
+
+// Shared-only completion (single is_done flag) — not per-person tracking
+// like PackingItemCheck (ROADMAP.md Milestone AE).
+export interface Todo {
+  id: string;
+  trip_id: string;
+  text: string;
+  is_done: boolean;
+  due_date: string | null;
+  related_place_id: string | null;
+  phase: TodoPhase | null;
+  added_by: string;
   created_at: string;
 }
 

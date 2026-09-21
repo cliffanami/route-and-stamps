@@ -15,6 +15,7 @@ const TRIP_SCOPED_TABLES = new Set([
   "tips",
   "budget_lines",
   "packing_items",
+  "todos",
 ]);
 
 export function useRealtimeSubscription(
@@ -24,7 +25,8 @@ export function useRealtimeSubscription(
     | "tips"
     | "budget_lines"
     | "packing_items"
-    | "packing_item_checks",
+    | "packing_item_checks"
+    | "todos",
   tripId: string,
 ) {
   const queryClient = useQueryClient();

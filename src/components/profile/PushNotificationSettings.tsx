@@ -21,6 +21,7 @@ const TYPE_LABELS: Partial<Record<NotificationType, string>> = {
   packing_due: "Packing reminder due",
   trip_joined: "Someone joined the trip",
   checked_in: "Someone checked in",
+  todo_added: "New todo added",
 };
 
 interface PushNotificationSettingsProps {

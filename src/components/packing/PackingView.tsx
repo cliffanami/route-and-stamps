@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
 import { useTrip, useUpdateTripCategoryConfig } from "@/lib/queries/use-trip";
@@ -15,6 +14,8 @@ import {
   useDeletePackingItem,
 } from "@/lib/queries/use-packing-items";
 import { useRealtimeSubscription } from "@/lib/queries/use-realtime-subscription";
+import { DetailTabs } from "@/components/ui/DetailTabs";
+import { TodosView } from "@/components/todos/TodosView";
 import { PackingMatrix } from "./PackingMatrix";
 import { PackingItemDetailDialog } from "./PackingItemDetailDialog";
 import { PackingForm } from "./PackingForm";
@@ -105,38 +106,46 @@ export function PackingView({ tripId }: PackingViewProps) {
     return <p className="px-6 py-4 text-muted">Loading…</p>;
   }
 
+  const packingContent =
+    items.length === 0 ? (
+      <p className="text-muted">No packing items added yet.</p>
+    ) : (
+      <PackingMatrix
+        items={items}
+        checks={checks}
+        members={members}
+        currentUserId={userId}
+        categories={trip?.packing_categories ?? []}
+        onToggleShared={(item, checked) =>
+          toggleShared.mutate({ id: item.id, isChecked: checked })
+        }
+        onToggleCheck={(item, checked) =>
+          toggleCheck.mutate({ itemId: item.id, checked })
+        }
+        onShowDetail={setDetailItem}
+      />
+    );
+
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between gap-2">
-        <h1>Packing</h1>
-        <Button
-          type="button"
-          variant="primary"
-          onClick={() => setAddingItem(true)}
-          disabled={!userId}
-        >
-          Add an item
-        </Button>
-      </div>
+      <h1>Checklists</h1>
 
-      {items.length === 0 ? (
-        <p className="text-muted">No packing items added yet.</p>
-      ) : (
-        <PackingMatrix
-          items={items}
-          checks={checks}
-          members={members}
-          currentUserId={userId}
-          categories={trip?.packing_categories ?? []}
-          onToggleShared={(item, checked) =>
-            toggleShared.mutate({ id: item.id, isChecked: checked })
-          }
-          onToggleCheck={(item, checked) =>
-            toggleCheck.mutate({ itemId: item.id, checked })
-          }
-          onShowDetail={setDetailItem}
-        />
-      )}
+      <DetailTabs
+        tabs={[
+          {
+            key: "packing",
+            label: "Packing",
+            content: packingContent,
+            onAdd: () => userId && setAddingItem(true),
+            addLabel: "Add an item",
+          },
+          {
+            key: "todo",
+            label: "Todo",
+            content: <TodosView tripId={tripId} />,
+          },
+        ]}
+      />
 
       <PackingItemDetailDialog
         item={detailItem}
