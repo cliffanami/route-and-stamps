@@ -22,6 +22,7 @@ import { FunFactsFeed } from "./FunFactsFeed";
 import { ItineraryView } from "./ItineraryView";
 import { MustGoDatePrompt } from "./MustGoDatePrompt";
 import { TomorrowBanner } from "./TomorrowBanner";
+import { TripCountdown } from "./TripCountdown";
 import type { Place } from "@/types/database.types";
 
 interface RouteSpineProps {
@@ -96,6 +97,8 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
           {trip.description && <p className="text-muted">{trip.description}</p>}
         </div>
       )}
+
+      {trip && <TripCountdown trip={trip} />}
 
       <TomorrowBanner tripId={tripId} places={places} />
 

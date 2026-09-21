@@ -8,6 +8,12 @@ export function formatPlainDate(
   iso: string,
   options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" },
 ): string {
+  return parsePlainDate(iso).toLocaleDateString("en-US", options);
+}
+
+// The same local-calendar-parts parsing, exposed directly for date
+// arithmetic (e.g. a trip countdown) rather than just display formatting.
+export function parsePlainDate(iso: string): Date {
   const [year, month, day] = iso.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString("en-US", options);
+  return new Date(year, month - 1, day);
 }

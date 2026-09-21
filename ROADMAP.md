@@ -560,15 +560,16 @@ Dedicated scoping session held now that E, F, and H are shipped (I was dropped o
 
 ---
 
-### AD — Trip countdown
+### AD — Trip countdown — shipped (2026-09-21)
 
 **Goal:** live-usage feedback: "add x days until this trip countdown." Simple, using data that already exists.
 
 - A "X days until your trip" display near the top of the Route page, alongside the Tomorrow banner (Milestone X) — computed from `trips.start_date`, which already exists and is already required for a trip to have any dated stops/places at all.
-- Counts down before the trip; once started (today falls within the trip's date range), switches to something like "Day N of the trip" instead of a countdown to zero or a negative number. After the trip ends, shows nothing (or a wrap-up state, TBD at build time — not worth a scoping question, low-stakes UI choice).
+- Counts down before the trip; once started (today falls within the trip's date range), switches to "Day N of the trip" instead of a countdown to zero or a negative number. After the trip ends (past `end_date`), shows nothing.
 - `trips.start_date` is nullable — same "return null, show nothing" handling `TomorrowBanner` already uses for its own missing-data case, not a broken/NaN countdown.
+- `parsePlainDate` added to the shared `src/lib/text/format-plain-date.ts` (alongside the existing `formatPlainDate`) — the same local-calendar-parts parsing, exposed for date arithmetic rather than just display formatting, so the UTC-vs-local day-shift fix stays in one place rather than being reimplemented here too.
 
-**Acceptance:** the Route page shows a live countdown before the trip starts, something sensible instead of a meaningless number once it's underway, verified against `trips.start_date`; a trip with no start date shows no countdown at all rather than a broken one.
+**Acceptance:** the Route page shows a live countdown before the trip starts, "Day N of the trip" once it's underway, nothing once it's ended, verified against `trips.start_date`/`end_date` — 6 unit tests covering the boundary cases (no start date, 1 day vs. several days out, the exact start date as Day 1, mid-trip, after the trip ends) plus a live end-to-end check confirming a real trip starting in 7 days shows "7 days until your trip" on the Route page.
 
 ---
 
