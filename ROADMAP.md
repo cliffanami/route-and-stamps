@@ -630,6 +630,20 @@ Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-ex
 
 ---
 
+### AH — Todo due-date reminders + itinerary-aware Tomorrow card — shipped (2026-09-23)
+
+**Goal:** live-usage feedback: luggage-forwarding action items (Kiyomizu An → Yamato counter, KIRO Hiroshima → Tamayura Hotel Asakusa) sat as inert text on a place's page with no actual reminder on the day they need to happen; separately, the existing `TomorrowBanner` (Milestone X) only ever read dated places, missing stop-arrival days and due todos entirely.
+
+- New `check_todo_reminders()` Postgres function, mirroring `check_packing_reminders()`'s shared-item branch exactly (todos are shared-only, no per-person loop to mirror) — fires a `todo_due` notification (`is_instant=true`, matching `packing_due`) once per todo, the day its `due_date` arrives, guarded by the same "no existing notification of this type for this row" idempotency check. Wired into the existing daily Vercel Cron route (`/api/cron/daily-checks`) alongside `check_scheduled_arrivals`/`check_packing_reminders` — no new cron schedule needed. `todo_due` added to the default `push_enabled_types` array (instant, same treatment as `packing_due`).
+- `TomorrowBanner` extended with `stops` and `todos` props: an "Arriving in {stop}" headline when a stop's `start_date` is tomorrow, dated places (unchanged), and undone todos due tomorrow — genuinely itinerary-aware now, not just place-dates. `RouteSpine` now fetches todos and passes stops/todos through.
+- The two luggage-forwarding actions from `Luggage Forwarding & Laundry.pdf` seeded as real todos on the trip: Kiyomizu An → Yamato counter (due Oct 31, `related_place_id` = Kiyomizu An), KIRO Hiroshima → Tamayura Hotel Asakusa (due Nov 5, `related_place_id` = KIRO Hiroshima) — the Tokyo→Kyoto leg (Oct 28) correctly has no todo, matching the doc's own "luggage forwarding is not necessary" note for that leg.
+
+**Acceptance:** a todo's due date fires a real notification on the day it's due, not just on creation; the Route page's Tomorrow card shows a stop arrival, dated places, and due todos together, sourced from the itinerary's own data with no separate reminder system to maintain.
+
+Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-existing unrelated warning), full Vitest suite 228/228 passing (`TomorrowBanner.test.tsx` rewritten for the new stop-arrival/due-todo behavior). Production-build Playwright run (throwaway trip, one disposable account) confirmed: manually invoking `check_todo_reminders()` created exactly one `todo_due` notification for a todo due today, none for one due tomorrow or one already marked done; the Route page's Tomorrow card showed "Arriving in {stop}", the tomorrow-dated place, and the tomorrow-due todo together, with the done todo correctly excluded; the notification appeared in the feed with the correct text. Throwaway trip and orphaned trips from two earlier flaky attempts (strict-locator collisions with the test trip's own name/duplicate place links — not app bugs) cleaned up; direct DB query confirmed zero leftover rows.
+
+---
+
 ### Deferred — not scoped yet
 
 **Dashboard / trip-list layer.** The layer above a single trip — a landing page listing every trip you're in, search, and stat cards (trips planned/done/upcoming to start, later km covered and who you traveled with). Genuinely doesn't exist today: `/trips` just grabs your first trip and redirects straight into it, no list view at all. This is the concrete first slice of the "Multi-trip accounts" line already sitting in Beyond M9 below — explicit call to give it its own dedicated scoping session (same treatment Milestone G got) rather than sketch it in passing alongside smaller items.

@@ -7,6 +7,7 @@ import { useStops } from "@/lib/queries/use-stops";
 import { usePlaces, useSetPlaceNearestStop } from "@/lib/queries/use-places";
 import { useVotes } from "@/lib/queries/use-votes";
 import { useTips } from "@/lib/queries/use-tips";
+import { useTodos } from "@/lib/queries/use-todos";
 import { useStopCheckins } from "@/lib/queries/use-stop-checkins";
 import { usePlaceCheckins } from "@/lib/queries/use-place-checkins";
 import { useTripMembers } from "@/lib/queries/use-trip-members";
@@ -42,6 +43,7 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
   const { data: checkins = [] } = useStopCheckins(tripId);
   const { data: placeCheckins = [] } = usePlaceCheckins(tripId);
   const { data: tips = [] } = useTips(tripId);
+  const { data: todos = [] } = useTodos(tripId);
   useRealtimeSubscription("places", tripId);
   useRealtimeSubscription("votes", tripId);
 
@@ -221,7 +223,7 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
 
       {trip && <TripCountdown trip={trip} />}
 
-      <TomorrowBanner tripId={tripId} places={places} />
+      <TomorrowBanner tripId={tripId} places={places} stops={stops} todos={todos} />
 
       <FunFactsFeed tripId={tripId} />
 

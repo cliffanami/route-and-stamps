@@ -14,7 +14,7 @@ export type BudgetStatus = "not_booked" | "pending" | "paid";
 export type NotificationType =
   "consensus_reached" | "place_added" | "tip_added" | "vote_cast" |
   "arrival_estimated" | "packing_due" | "trip_joined" | "checked_in" |
-  "todo_added";
+  "todo_added" | "todo_due";
 export type TripRole = "owner" | "member";
 export type FunFactSource = "wikipedia" | "manual";
 export type TodoPhase = "pre_trip" | "during_trip" | "post_trip";

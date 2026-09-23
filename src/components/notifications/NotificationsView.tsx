@@ -85,6 +85,11 @@ const NOTIFICATION_META: Record<
     message: (p) => `${p.added_by_name} added a todo: ${p.text}`,
     href: (tripId) => `/trips/${tripId}/packing`,
   },
+  todo_due: {
+    icon: CheckSquare,
+    message: (p) => `Todo due: ${p.text}`,
+    href: (tripId) => `/trips/${tripId}/packing`,
+  },
 };
 
 function timeAgo(isoDate: string): string {
