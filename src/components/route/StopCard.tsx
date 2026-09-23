@@ -7,7 +7,7 @@ import { Tag } from "@/components/ui/Tag";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
 import { CheckInControl } from "./CheckInControl";
-import { formatPlainDate } from "@/lib/text/format-plain-date";
+import { formatPlainDate, parsePlainDate } from "@/lib/text/format-plain-date";
 import type { Place, PlaceCheckin, Stop, StopCheckin, Tip } from "@/types/database.types";
 
 interface StopCardProps {
@@ -66,9 +66,21 @@ export function StopCard({
   // stop with both (the common case, not the rare one the field was
   // designed for) never showed its actual dates at all. start_date/end_date
   // is what check_scheduled_arrivals() actually reads either way.
+  //
+  // The day-count in parens is computed from the real dates, not typed by
+  // hand — a manually-authored "Days N–M" in date_label goes stale the
+  // moment a date changes; this can't.
+  const dayCount =
+    stop.start_date && stop.end_date && stop.end_date !== stop.start_date
+      ? Math.round(
+          (parsePlainDate(stop.end_date).getTime() -
+            parsePlainDate(stop.start_date).getTime()) /
+            (24 * 60 * 60 * 1000),
+        )
+      : null;
   const dateRange = stop.start_date
-    ? stop.end_date && stop.end_date !== stop.start_date
-      ? `${formatPlainDate(stop.start_date)} – ${formatPlainDate(stop.end_date)}`
+    ? dayCount
+      ? `${formatPlainDate(stop.start_date)} – ${formatPlainDate(stop.end_date!)} (${dayCount} day${dayCount === 1 ? "" : "s"})`
       : formatPlainDate(stop.start_date)
     : null;
 
