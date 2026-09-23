@@ -411,3 +411,31 @@ textarea.input { min-height: 90px; resize: vertical; }
 }
 .dialog-body { font-size: 14px; opacity: 0.85; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+
+/* — sheet — a bottom-anchored slide-up panel (e.g. the map's marker sheet),
+   distinct from .dialog's centered modal — same surface language
+   (.color-surface/--shadow-lg/--radius-lg), different anchor and motion. */
+.sheet-backdrop {
+  position: fixed; inset: 0; display: flex; align-items: flex-end; justify-content: center;
+  background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
+}
+.sheet {
+  width: min(560px, 100%); display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--color-surface); box-shadow: var(--shadow-lg);
+  animation: sheet-slide-up 0.2s ease-out;
+}
+.sheet-handle {
+  align-self: center; width: 36px; height: 4px; border-radius: var(--radius-sm);
+  background: var(--color-divider); touch-action: none;
+}
+.sheet-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 20px;
+}
+.sheet-body { display: flex; flex-direction: column; gap: var(--space-2); }
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}

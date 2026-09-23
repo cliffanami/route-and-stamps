@@ -1,9 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
 import L from "leaflet";
-import Link from "next/link";
 import { useStops } from "@/lib/queries/use-stops";
 import { usePlaces } from "@/lib/queries/use-places";
 import { useTrip } from "@/lib/queries/use-trip";
@@ -12,6 +12,7 @@ import { usePlaceCheckins } from "@/lib/queries/use-place-checkins";
 import { sortStopsByDate } from "@/lib/geo/sort-stops-by-date";
 import { currentStopFromCheckins, nextStopAfter } from "@/lib/geo/current-stop";
 import { CurrentPositionMarker } from "./CurrentPositionMarker";
+import { MarkerSheet } from "./MarkerSheet";
 import { circleIcon } from "./circle-icon";
 import { TILE_LAYER_URL, TILE_LAYER_SUBDOMAINS, TILE_LAYER_ATTRIBUTION } from "./tile-layer-config";
 import {
@@ -19,6 +20,7 @@ import {
   leafletDashArray,
   transportModeLineStyle,
 } from "./transport-mode-line-style";
+import type { Place, Stop } from "@/types/database.types";
 
 interface MapViewProps {
   tripId: string;
@@ -41,6 +43,9 @@ export function MapView({ tripId }: MapViewProps) {
   const { data: trip } = useTrip(tripId);
   const { data: checkins = [] } = useStopCheckins(tripId);
   const { data: placeCheckins = [] } = usePlaceCheckins(tripId);
+  const [selection, setSelection] = useState<
+    { kind: "stop"; stop: Stop } | { kind: "place"; place: Place } | null
+  >(null);
 
   if (stopsLoading) {
     return <p className="px-6 py-4 text-muted">Loading…</p>;
@@ -163,11 +168,12 @@ export function MapView({ tripId }: MapViewProps) {
           ))}
 
           {stops.map((stop) => (
-            <Marker key={stop.id} position={[stop.lat, stop.lng]} icon={stopIcon}>
-              <Popup>
-                <Link href={`/trips/${tripId}/stops/${stop.id}`}>{stop.name}</Link>
-              </Popup>
-            </Marker>
+            <Marker
+              key={stop.id}
+              position={[stop.lat, stop.lng]}
+              icon={stopIcon}
+              eventHandlers={{ click: () => setSelection({ kind: "stop", stop }) }}
+            />
           ))}
 
           {locatedPlaces.map((place) => (
@@ -175,18 +181,21 @@ export function MapView({ tripId }: MapViewProps) {
               key={place.id}
               position={[place.lat!, place.lng!]}
               icon={visitedPlaceIds.has(place.id) ? visitedPlaceIcon : placeIcon}
-            >
-              <Popup>
-                <Link href={`/trips/${tripId}/places/${place.id}`}>
-                  {place.name}
-                </Link>
-              </Popup>
-            </Marker>
+              eventHandlers={{ click: () => setSelection({ kind: "place", place }) }}
+            />
           ))}
 
           <CurrentPositionMarker />
         </MapContainer>
       </div>
+
+      <MarkerSheet
+        tripId={tripId}
+        selection={selection}
+        checkins={checkins}
+        placeCheckins={placeCheckins}
+        onClose={() => setSelection(null)}
+      />
 
       {hasLegend && (
         <div className="flex flex-wrap items-center gap-3 px-4 py-2">
