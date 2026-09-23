@@ -16,13 +16,19 @@ interface ItineraryViewProps {
 // until at least one place has a date — before that, an "everything is
 // unscheduled" list would just duplicate the route's existing per-stop and
 // Unassigned sections with no added value.
+//
+// Undated places are intentionally left out, not listed under a "Not yet
+// scheduled" heading — every undated place is already visible either under
+// its stop's card (if nearest_stop_id is set) or in the Unassigned section
+// (if not), so a bare bullet-list repeat here was pure duplication with no
+// added information, just clutter at the bottom of an already-long page
+// (live-usage feedback: a real trip with 24 undated-but-assigned places
+// showed all 24 twice).
 export function ItineraryView({ tripId, places }: ItineraryViewProps) {
   const dated = places.filter(
     (place): place is Place & { date: string } => place.date !== null,
   );
   if (dated.length === 0) return null;
-
-  const undated = places.filter((place) => place.date === null);
 
   const byDate = new Map<string, Place[]>();
   for (const place of dated) {
@@ -49,20 +55,6 @@ export function ItineraryView({ tripId, places }: ItineraryViewProps) {
           </ul>
         </div>
       ))}
-      {undated.length > 0 && (
-        <div className="flex flex-col gap-1">
-          <h3>Not yet scheduled</h3>
-          <ul className="flex flex-col gap-1">
-            {undated.map((place) => (
-              <li key={place.id}>
-                <Link href={`/trips/${tripId}/places/${place.id}`}>
-                  {place.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </section>
   );
 }

@@ -59,7 +59,7 @@ describe("ItineraryView", () => {
     expect(screen.getByText("Osaka Castle")).toBeInTheDocument();
   });
 
-  it("lists undated places under 'Not yet scheduled' once at least one place has a date", () => {
+  it("omits undated places entirely — they're already shown under their stop or Unassigned", () => {
     render(
       <ItineraryView
         tripId="trip-1"
@@ -70,7 +70,7 @@ describe("ItineraryView", () => {
       />,
     );
 
-    expect(screen.getByText("Not yet scheduled")).toBeInTheDocument();
-    expect(screen.getByText("Undated place")).toBeInTheDocument();
+    expect(screen.queryByText("Not yet scheduled")).not.toBeInTheDocument();
+    expect(screen.queryByText("Undated place")).not.toBeInTheDocument();
   });
 });
