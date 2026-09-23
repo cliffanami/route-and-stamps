@@ -17,18 +17,19 @@ interface ItineraryViewProps {
 // unscheduled" list would just duplicate the route's existing per-stop and
 // Unassigned sections with no added value.
 //
-// Undated places are intentionally left out, not listed under a "Not yet
-// scheduled" heading — every undated place is already visible either under
-// its stop's card (if nearest_stop_id is set) or in the Unassigned section
-// (if not), so a bare bullet-list repeat here was pure duplication with no
-// added information, just clutter at the bottom of an already-long page
+// Undated places still get their own "Not yet scheduled" group here even
+// though each one is also visible under its stop's card (collapsed by
+// default) or the Unassigned section — this flat list is the only place
+// every undated place is visible at a glance without expanding anything
 // (live-usage feedback: a real trip with 24 undated-but-assigned places
-// showed all 24 twice).
+// made that the only practical way to see them all at once).
 export function ItineraryView({ tripId, places }: ItineraryViewProps) {
   const dated = places.filter(
     (place): place is Place & { date: string } => place.date !== null,
   );
   if (dated.length === 0) return null;
+
+  const undated = places.filter((place) => place.date === null);
 
   const byDate = new Map<string, Place[]>();
   for (const place of dated) {
@@ -44,17 +45,27 @@ export function ItineraryView({ tripId, places }: ItineraryViewProps) {
       {sortedDates.map((date) => (
         <div key={date} className="flex flex-col gap-1">
           <h3>{formatPlainDate(date, { weekday: "short", month: "short", day: "numeric" })}</h3>
-          <ul className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1">
             {byDate.get(date)!.map((place) => (
-              <li key={place.id}>
-                <Link href={`/trips/${tripId}/places/${place.id}`}>
-                  {place.name}
-                </Link>
-              </li>
+              <Link key={place.id} href={`/trips/${tripId}/places/${place.id}`}>
+                {place.name}
+              </Link>
             ))}
-          </ul>
+          </div>
         </div>
       ))}
+      {undated.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <h3>Not yet scheduled</h3>
+          <div className="flex flex-col gap-1">
+            {undated.map((place) => (
+              <Link key={place.id} href={`/trips/${tripId}/places/${place.id}`}>
+                {place.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
