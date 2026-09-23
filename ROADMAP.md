@@ -592,7 +592,7 @@ Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (one pre-existin
 
 ---
 
-### AF — Add to calendar (stops + scheduled todos)
+### AF — Add to calendar (stops + scheduled todos) — shipped (2026-09-23)
 
 **Goal:** live-usage feedback: "work with native calendars." Sequenced after Milestone AE — todos need a real `due_date` to be calendar-addable, which AE establishes.
 
@@ -601,6 +601,14 @@ Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (one pre-existin
 - Exact mechanism (`.ics` download vs. calendar-specific URL schemes vs. both) is an implementation detail to settle at build time — both are keyless, no API/billing account needed either way.
 
 **Acceptance:** a stop's page offers a working "Add to calendar" action using its existing dates; a todo with a due date offers the same; a todo with no due date doesn't show a calendar option that would have nothing to add.
+
+**Judgment call, flagging rather than silently deciding:** `.ics` download only, not a Google Calendar link — a `.ics` opens the device's *own* calendar app on import (Apple, Google, Outlook, any native iOS/Android calendar), which is what "work with native calendars" was actually asking for; a Google Calendar link only helps someone who specifically uses Google Calendar, and this app makes no such assumption about its users (v1 is two specific people, extending to friend groups later per ARCHITECTURE.md). One mechanism, not two, for one button.
+
+A stop's whole date range collapses to a single `VEVENT`, not one event per day — `arrival_time` (a real timestamp, e.g. a flight) takes precedence when set, rendering a 1-hour timed "Arrive: {stop name}" event; otherwise an all-day event spans `start_date`..`end_date`. A stop with neither renders no calendar link at all (nothing to add).
+
+Built as: `src/lib/calendar/generate-ics.ts` (`generateIcs`, `stopToIcsEvent`, `stopToIcsEvent`'s all-day date formatting uses local calendar-date parts, not `toISOString()`, to avoid the UTC-vs-local day-shift bug this project has fixed multiple times elsewhere — `parsePlainDate` reused directly for the date-only fields) + `src/components/calendar/AddToCalendarLink.tsx` (a `data:text/calendar` download link, mirroring `OpenInGoogleMapsLink`'s plain-`<a>`-styled-as-`.btn` pattern, with an `iconOnly` variant for `TodoRow`'s compact card). Wired into `StopDetail.tsx`'s Overview tab (next to `OpenInGoogleMapsLink`) and `TodoRow.tsx` (a small calendar icon next to the edit button, shown only when `due_date` is set).
+
+Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-existing unrelated warning), full Vitest suite 223/223 passing (11 new `generate-ics.test.ts` cases covering all-day/timed formatting, the exclusive-end-date rule, text escaping, and both `stopToIcsEvent`/`todoToIcsEvent` branch/null cases). Production-build Playwright run (throwaway trip provisioned via privileged SQL, one disposable account) confirmed: a stop with `start_date`/`end_date` renders a working "Add to calendar" link whose decoded `.ics` content has the correct `SUMMARY` and an exclusive `DTEND` one day past the last inclusive day; a stop with `arrival_time` set renders a timed event instead, taking precedence over its own `start_date`/`end_date`; a stop with no date data at all renders no calendar link; a todo with a due date shows the icon-only calendar link on its row with the correct `.ics` content. Throwaway trip cleaned up afterward; direct DB query confirmed zero leftover rows.
 
 ---
 

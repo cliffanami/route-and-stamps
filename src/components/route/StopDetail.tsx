@@ -22,6 +22,8 @@ import { CheckInControl } from "./CheckInControl";
 import { LocationMapLoader } from "@/components/map/LocationMapLoader";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
+import { AddToCalendarLink } from "@/components/calendar/AddToCalendarLink";
+import { stopToIcsEvent } from "@/lib/calendar/generate-ics";
 import { useCurrentUserId } from "@/lib/queries/use-current-user";
 import { useStop, useDeleteStop } from "@/lib/queries/use-stops";
 import { usePlaces } from "@/lib/queries/use-places";
@@ -191,6 +193,8 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
     );
   }
 
+  const icsEvent = stopToIcsEvent(stop);
+
   const overviewContent = (
     <div className="flex flex-col gap-4">
       {(stop.start_date || stop.arrival_time) && (
@@ -288,6 +292,9 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
       <div className="flex flex-col gap-2">
         <LocationMapLoader lat={stop.lat} lng={stop.lng} title={stop.name} />
         <OpenInGoogleMapsLink lat={stop.lat} lng={stop.lng} />
+        {icsEvent && (
+          <AddToCalendarLink event={icsEvent} filename={`${stop.name}.ics`} />
+        )}
       </div>
     </div>
   );
