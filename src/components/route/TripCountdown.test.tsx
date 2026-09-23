@@ -41,17 +41,25 @@ describe("TripCountdown", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("shows a countdown before the trip starts", () => {
-    render(<TripCountdown trip={makeTrip({ start_date: isoDateOffsetFromToday(5) })} />);
-    expect(screen.getByText("5 days until your trip")).toBeInTheDocument();
+  it("shows a countdown before the trip starts, with the actual start date", () => {
+    const startIso = isoDateOffsetFromToday(5);
+    render(<TripCountdown trip={makeTrip({ start_date: startIso })} />);
+    expect(screen.getByText(/5 days until your trip/)).toBeInTheDocument();
+    const [y, m, d] = startIso.split("-").map(Number);
+    const formatted = new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+    expect(screen.getByText(new RegExp(formatted))).toBeInTheDocument();
   });
 
   it("uses singular 'day' for exactly 1 day out", () => {
     render(<TripCountdown trip={makeTrip({ start_date: isoDateOffsetFromToday(1) })} />);
-    expect(screen.getByText("1 day until your trip")).toBeInTheDocument();
+    expect(screen.getByText(/1 day until your trip/)).toBeInTheDocument();
   });
 
-  it("shows 'Day N of your trip' once the trip has started", () => {
+  it("shows 'Day N of your trip' with the actual calendar date once the trip has started", () => {
     render(
       <TripCountdown
         trip={makeTrip({
@@ -60,7 +68,14 @@ describe("TripCountdown", () => {
         })}
       />,
     );
-    expect(screen.getByText("Day 3 of your trip")).toBeInTheDocument();
+    expect(screen.getByText(/Day 3 of your trip/)).toBeInTheDocument();
+    const today = new Date();
+    const formatted = today.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+    expect(screen.getByText(new RegExp(formatted))).toBeInTheDocument();
   });
 
   it("shows Day 1 on the trip's start date itself", () => {
@@ -72,7 +87,7 @@ describe("TripCountdown", () => {
         })}
       />,
     );
-    expect(screen.getByText("Day 1 of your trip")).toBeInTheDocument();
+    expect(screen.getByText(/Day 1 of your trip/)).toBeInTheDocument();
   });
 
   it("renders nothing after the trip has ended", () => {

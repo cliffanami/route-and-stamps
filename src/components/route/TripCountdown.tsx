@@ -9,6 +9,11 @@ interface TripCountdownProps {
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+};
 
 function startOfToday(): Date {
   const now = new Date();
@@ -33,6 +38,8 @@ export function TripCountdown({ trip }: TripCountdownProps) {
       <Card elevation="md">
         <p>
           {daysUntilStart} day{daysUntilStart === 1 ? "" : "s"} until your trip
+          {" — "}
+          starts {start.toLocaleDateString("en-US", DATE_FORMAT)}
         </p>
       </Card>
     );
@@ -42,7 +49,11 @@ export function TripCountdown({ trip }: TripCountdownProps) {
     const dayNumber = Math.round((today.getTime() - start.getTime()) / MS_PER_DAY) + 1;
     return (
       <Card elevation="md">
-        <p>Day {dayNumber} of your trip</p>
+        <p>
+          Day {dayNumber} of your trip
+          {" — "}
+          {today.toLocaleDateString("en-US", DATE_FORMAT)}
+        </p>
       </Card>
     );
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CaretDown, CaretUp, PlusCircle } from "@phosphor-icons/react";
+import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { useTrip } from "@/lib/queries/use-trip";
 import { useStops } from "@/lib/queries/use-stops";
 import { usePlaces, useSetPlaceNearestStop } from "@/lib/queries/use-places";
@@ -13,8 +13,8 @@ import { useTripMembers } from "@/lib/queries/use-trip-members";
 import { useCurrentUserId } from "@/lib/queries/use-current-user";
 import { useRealtimeSubscription } from "@/lib/queries/use-realtime-subscription";
 import { sortStopsByDate } from "@/lib/geo/sort-stops-by-date";
-import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
+import { DetailTabs } from "@/components/ui/DetailTabs";
 import { StopCard } from "./StopCard";
 import { PlaceRow, isMutualMustGo } from "./PlaceRow";
 import { AddStopForm } from "./AddStopForm";
@@ -89,39 +89,16 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
   // right place without needing a drag interaction.
   const orderedStops = sortStopsByDate(stops);
 
-  return (
-    <div className="flex flex-col gap-8 p-6">
-      {trip && (
-        <div className="flex flex-col gap-1">
-          <h1>{trip.name}</h1>
-          {trip.description && <p className="text-muted">{trip.description}</p>}
-        </div>
-      )}
-
-      {trip && <TripCountdown trip={trip} />}
-
-      <TomorrowBanner tripId={tripId} places={places} />
-
-      <FunFactsFeed tripId={tripId} />
-
-      {places.length === 0 && (
-        <p className="text-muted">No places added yet.</p>
-      )}
-
-      <div className="flex items-center justify-between gap-2">
-        <label className="field flex flex-row items-center gap-2">
-          <input
-            type="checkbox"
-            checked={hideSkipped}
-            onChange={(event) => setHideSkipped(event.target.checked)}
-          />
-          Hide places I&rsquo;ve skipped
-        </label>
-        <Button type="button" variant="secondary" onClick={() => setAddingStop(true)}>
-          <PlusCircle weight="duotone" size={20} />
-          Add stop
-        </Button>
-      </div>
+  const stopsContent = (
+    <div className="flex flex-col gap-8">
+      <label className="field flex flex-row items-center gap-2">
+        <input
+          type="checkbox"
+          checked={hideSkipped}
+          onChange={(event) => setHideSkipped(event.target.checked)}
+        />
+        Hide places I&rsquo;ve skipped
+      </label>
 
       {stops.length === 0 && (
         <p className="text-muted">No stops yet.</p>
@@ -226,8 +203,48 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
           )}
         </section>
       )}
+    </div>
+  );
 
-      <ItineraryView tripId={tripId} places={places} />
+  const dayByDayContent = (
+    <ItineraryView tripId={tripId} places={places} stops={stops} />
+  );
+
+  return (
+    <div className="flex flex-col gap-8 p-6">
+      {trip && (
+        <div className="flex flex-col gap-1">
+          <h1>{trip.name}</h1>
+          {trip.description && <p className="text-muted">{trip.description}</p>}
+        </div>
+      )}
+
+      {trip && <TripCountdown trip={trip} />}
+
+      <TomorrowBanner tripId={tripId} places={places} />
+
+      <FunFactsFeed tripId={tripId} />
+
+      {places.length === 0 && (
+        <p className="text-muted">No places added yet.</p>
+      )}
+
+      <DetailTabs
+        tabs={[
+          {
+            key: "stops",
+            label: "Stops",
+            content: stopsContent,
+            onAdd: () => setAddingStop(true),
+            addLabel: "Add stop",
+          },
+          {
+            key: "day-by-day",
+            label: "Day by day",
+            content: dayByDayContent,
+          },
+        ]}
+      />
 
       <MustGoDatePrompt
         tripId={tripId}
