@@ -7,6 +7,7 @@ import { Tag } from "@/components/ui/Tag";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
 import { CheckInControl } from "./CheckInControl";
+import { formatPlainDate } from "@/lib/text/format-plain-date";
 import type { Place, PlaceCheckin, Stop, StopCheckin, Tip } from "@/types/database.types";
 
 interface StopCardProps {
@@ -59,19 +60,17 @@ export function StopCard({
     (c) => c.stop_id === stop.id && c.user_id === currentUserId,
   );
 
-  // date_label is a free-text override — shown as-is if set. Otherwise
-  // fall back to the structured start_date/end_date (ROADMAP.md Milestone
-  // D), which is what check_scheduled_arrivals() actually reads; showing
-  // neither would leave the date silently invisible once someone's set it.
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const dateDisplay =
-    stop.date_label ??
-    (stop.start_date
-      ? stop.end_date && stop.end_date !== stop.start_date
-        ? `${formatDate(stop.start_date)} – ${formatDate(stop.end_date)}`
-        : formatDate(stop.start_date)
-      : null);
+  // date_label is a free-text descriptive tagline (e.g. "Japan's electric
+  // capital"), shown alongside the real calendar dates, not instead of
+  // them — it used to replace start_date/end_date entirely, which meant a
+  // stop with both (the common case, not the rare one the field was
+  // designed for) never showed its actual dates at all. start_date/end_date
+  // is what check_scheduled_arrivals() actually reads either way.
+  const dateRange = stop.start_date
+    ? stop.end_date && stop.end_date !== stop.start_date
+      ? `${formatPlainDate(stop.start_date)} – ${formatPlainDate(stop.end_date)}`
+      : formatPlainDate(stop.start_date)
+    : null;
 
   return (
     <section className="flex flex-col gap-3">
@@ -100,7 +99,8 @@ export function StopCard({
               <Tag variant="accent">{consensusCount} confirmed</Tag>
             )}
           </span>
-          {dateDisplay && <p className="text-muted">{dateDisplay}</p>}
+          {stop.date_label && <p className="text-muted">{stop.date_label}</p>}
+          {dateRange && <p className="text-muted">{dateRange}</p>}
           {stop.arrival_time && (
             <p className="text-muted">
               Arriving{" "}
