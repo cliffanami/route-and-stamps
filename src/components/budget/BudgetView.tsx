@@ -36,6 +36,11 @@ export function BudgetView({ tripId }: BudgetViewProps) {
   const [editingLine, setEditingLine] = useState<BudgetLine | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
+
+  function toggleCurrency(currency: string) {
+    setSelectedCurrency((current) => (current === currency ? null : currency));
+  }
 
   const dialogOpen = addingLine || editingLine !== null;
   function closeDialog() {
@@ -84,7 +89,12 @@ export function BudgetView({ tripId }: BudgetViewProps) {
         </Button>
       </div>
 
-      <BudgetSummary trip={trip} lines={lines} />
+      <BudgetSummary
+        trip={trip}
+        lines={lines}
+        selectedCurrency={selectedCurrency}
+        onSelectCurrency={toggleCurrency}
+      />
 
       <p className="text-muted">
         Cap and currency now live in{" "}
@@ -92,7 +102,10 @@ export function BudgetView({ tripId }: BudgetViewProps) {
       </p>
 
       <div className="flex flex-col gap-3">
-        {lines.map((line) => (
+        {(selectedCurrency
+          ? lines.filter((line) => line.currency === selectedCurrency)
+          : lines
+        ).map((line) => (
           <CostLineRow
             key={line.id}
             tripId={tripId}

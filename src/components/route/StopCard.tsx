@@ -124,13 +124,15 @@ export function StopCard({
               })}
             </p>
           )}
-          <OpenInGoogleMapsLink lat={stop.lat} lng={stop.lng} />
-          <CheckInControl
-            tripId={tripId}
-            stop={stop}
-            checkins={checkins}
-            onCheckedIn={() => setExpanded(true)}
-          />
+          <div className="flex flex-row flex-wrap items-center gap-2">
+            <OpenInGoogleMapsLink lat={stop.lat} lng={stop.lng} />
+            <CheckInControl
+              tripId={tripId}
+              stop={stop}
+              checkins={checkins}
+              onCheckedIn={() => setExpanded(true)}
+            />
+          </div>
           {iAmCheckedIn && stopTips.length > 0 && (
             <Link
               href={`/trips/${tripId}/stops/${stop.id}`}

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import {
   stopLogisticsSchema,
@@ -115,6 +116,39 @@ export function useUpdateStopLogistics(tripId: string) {
       const { error } = await supabase
         .from("stops")
         .update(parsed)
+        .eq("id", stopId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stops", tripId] });
+    },
+  });
+}
+
+// Narrow single-field mutation, same pattern as useSetPlaceDate/
+// useSetPlaceNearestStop — the early-check-in prompt (CheckInControl)
+// only ever adjusts this one field, not the full logistics form's worth.
+// addStopSchema itself can't be picked from — its cross-field .refine()
+// wraps it in a ZodEffects, which drops .pick() — so this validates the
+// same shape addStopSchema.shape.start_date does, standalone.
+const stopStartDateInput = z.string().trim().min(1);
+
+export function useSetStopStartDate(tripId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      stopId,
+      startDate,
+    }: {
+      stopId: string;
+      startDate: string;
+    }) => {
+      const parsed = stopStartDateInput.parse(startDate);
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("stops")
+        .update({ start_date: parsed })
         .eq("id", stopId);
       if (error) throw error;
     },

@@ -8,6 +8,8 @@ import type { BudgetLine, Trip } from "@/types/database.types";
 interface BudgetSummaryProps {
   trip: Trip;
   lines: BudgetLine[];
+  selectedCurrency: string | null;
+  onSelectCurrency: (currency: string) => void;
 }
 
 // Per-currency totals shown side by side, never blended (ROADMAP.md M4
@@ -18,7 +20,18 @@ interface BudgetSummaryProps {
 // paid is only what Mark-as-paid actually confirmed. The cap still
 // compares against the logged total, since a cap is about total
 // commitment, not just what's been paid out so far.
-export function BudgetSummary({ trip, lines }: BudgetSummaryProps) {
+//
+// Each row is a toggle, not just a display — tapping a currency filters
+// the cost list below to just that currency's lines (BudgetView owns the
+// selection state); tapping the same currency again clears it. Live-usage
+// feedback: with JPY/USD/KES all logged on one trip, finding "what made up
+// this figure" meant scrolling the whole flat list by eye.
+export function BudgetSummary({
+  trip,
+  lines,
+  selectedCurrency,
+  onSelectCurrency,
+}: BudgetSummaryProps) {
   const totalsByCurrency = useMemo(() => {
     const totals = new Map<string, { logged: number; paid: number }>();
     for (const line of lines) {
@@ -45,10 +58,16 @@ export function BudgetSummary({ trip, lines }: BudgetSummaryProps) {
             : null;
         const overCap = capMinor !== null && logged > capMinor;
 
+        const isSelected = selectedCurrency === currency;
+
         return (
-          <div
+          <button
             key={currency}
-            className="flex items-baseline justify-between gap-2"
+            type="button"
+            onClick={() => onSelectCurrency(currency)}
+            aria-pressed={isSelected}
+            className="flex items-baseline justify-between gap-2 text-left"
+            style={isSelected ? { color: "var(--color-accent)" } : undefined}
           >
             <span>{currency}</span>
             <span className="flex items-baseline gap-2">
@@ -62,7 +81,7 @@ export function BudgetSummary({ trip, lines }: BudgetSummaryProps) {
               </span>
               {overCap && <Tag variant="accent-2">Over cap</Tag>}
             </span>
-          </div>
+          </button>
         );
       })}
     </div>

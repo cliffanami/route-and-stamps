@@ -644,6 +644,21 @@ Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-ex
 
 ---
 
+### AI — Budget currency filter, early check-in prompt, side-by-side Route actions — shipped (2026-09-24)
+
+**Goal:** live-usage feedback batch, four small independent items surfaced from actually using the app on the real trip.
+
+- **Budget currency click-to-filter**: `BudgetSummary`'s per-currency rows are now toggle buttons, not static display — tapping a currency (e.g. JPY) filters the cost list below to just that currency's lines; tapping the same one again clears the filter. `BudgetView` owns the `selectedCurrency` state; `BudgetSummary` stays presentational, just reporting taps up.
+- **Early check-in prompt**: `CheckInControl` now compares today's date against the stop's `start_date` on check-in. Checking in before the expected date opens an "Arrived early?" dialog offering to update the stop's `start_date` to today — a new narrow `useSetStopStartDate(tripId)` mutation hook, same single-field pattern as `useSetPlaceDate`/`useSetPlaceNearestStop`. Scoped to the stop's own date only, not a cascading update to `trip.start_date` — those aren't the same concept (a trip can start well before its first stop, exactly as corrected earlier this session for Kenya-departure vs. Tokyo-arrival), so conflating them here would've been wrong more often than right.
+- **Side-by-side Route actions**: `StopCard`'s "Open in Google Maps" link and the `CheckInControl` block were stacked in a `flex-col`, wasting horizontal space on a page with plenty of it. Now wrapped in a `flex-row flex-wrap` container instead.
+- **Flight departure data**: Tokyo (return) stop's `flight_info` set to the actual EY 801 departure (17:20 local Narita, 09 Nov 2026 → 00:40 local Abu Dhabi, 10 Nov) from the Etihad booking confirmation — visible on that stop's Detail page.
+
+**Acceptance:** tapping a Budget currency total filters the cost list to that currency and un-filters on a second tap; checking in early on a stop prompts to adjust its date, and confirming updates it; Open in Google Maps and I'm here sit side by side on the Route page; the final Tokyo stop shows its actual departure flight.
+
+Verified live: `npx tsc --noEmit` clean (one real type error caught and fixed along the way — `addStopSchema` is wrapped in `ZodEffects` by its own cross-field `.refine()`, which drops `.pick()`; switched to a small standalone `z.string()` validator for the narrow mutation instead of trying to pick from the refined schema), `npx eslint src` clean (same one pre-existing unrelated warning), full Vitest suite 228/228 passing. Production-build Playwright run (throwaway trip, one disposable account) confirmed all three interactive behaviors: JPY/USD budget lines filter correctly on tap and restore on a second tap; "Open in Google Maps" and "I'm here" sit on the same row (bounding-box geometry checked, not just visual inspection); checking in on a stop dated three days out opens "Arrived early?", and confirming updates the stop's `start_date` to today in the database. Throwaway trip cleaned up afterward; direct DB query confirmed zero leftover rows. The flight-info data change verified directly against the real trip.
+
+---
+
 ### Deferred — not scoped yet
 
 **Dashboard / trip-list layer.** The layer above a single trip — a landing page listing every trip you're in, search, and stat cards (trips planned/done/upcoming to start, later km covered and who you traveled with). Genuinely doesn't exist today: `/trips` just grabs your first trip and redirects straight into it, no list view at all. This is the concrete first slice of the "Multi-trip accounts" line already sitting in Beyond M9 below — explicit call to give it its own dedicated scoping session (same treatment Milestone G got) rather than sketch it in passing alongside smaller items.
