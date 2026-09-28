@@ -688,6 +688,18 @@ Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-ex
 
 ---
 
+### AL — Laundry and transport-mode icons beside the stop-level luggage icon — shipped (2026-09-28)
+
+**Goal:** live-usage feedback: now that the Route page shows a stop-level luggage icon (Milestone AK), the same slot should carry the stop's laundry availability and how you're getting there too — three at-a-glance icons instead of one.
+
+- `StopCard` now also computes a laundry indicator (any place at this stop with `laundry_note` set → `WashingMachine` icon) and a transport-mode indicator (`stop.transport_mode` set → `TransportModeIcon`, the same icon lookup already used in Stop Detail's "Getting here" section and the map legend). All three — luggage, laundry, transport — render together in one icon row between "Arriving" and the Google-Maps/check-in buttons, each icon-only with its detail in `aria-label`/`title`, matching the established pattern.
+
+**Acceptance:** a stop with luggage forwarding, laundry, and a set transport mode shows all three icons together in that slot, visible without expanding the stop.
+
+Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-existing unrelated warning), full Vitest suite 228/228 passing. Production-build Playwright run (throwaway trip, one disposable account, a stop with `transport_mode: 'train'` and an accommodation place with both `forward_to_place_id` and `laundry_note` set) confirmed via `aria-label` assertions and a screenshot that all three icons render together in the collapsed stop card's header. Throwaway trip cleaned up afterward; direct DB query confirmed zero leftover rows.
+
+---
+
 ### Deferred — not scoped yet
 
 **Dashboard / trip-list layer.** The layer above a single trip — a landing page listing every trip you're in, search, and stat cards (trips planned/done/upcoming to start, later km covered and who you traveled with). Genuinely doesn't exist today: `/trips` just grabs your first trip and redirects straight into it, no list view at all. This is the concrete first slice of the "Multi-trip accounts" line already sitting in Beyond M9 below — explicit call to give it its own dedicated scoping session (same treatment Milestone G got) rather than sketch it in passing alongside smaller items.

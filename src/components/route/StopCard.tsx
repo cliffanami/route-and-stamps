@@ -2,11 +2,12 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { CaretDown, CaretUp, Suitcase } from "@phosphor-icons/react";
+import { CaretDown, CaretUp, Suitcase, WashingMachine } from "@phosphor-icons/react";
 import { Tag } from "@/components/ui/Tag";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
 import { CheckInControl } from "./CheckInControl";
+import { TransportModeIcon } from "./transport-mode-icon";
 import { formatPlainDate, parsePlainDate } from "@/lib/text/format-plain-date";
 import type { Place, PlaceCheckin, Stop, StopCheckin, Tip } from "@/types/database.types";
 
@@ -92,9 +93,10 @@ export function StopCard({
     : null;
 
   // Visible even collapsed — the caret hides places, not this header block
-  // — so this is the only luggage-forwarding signal you'll see without
-  // expanding the stop (ROADMAP.md live-usage feedback; PlaceRow's own
-  // inline icon still covers the per-place detail once expanded).
+  // — so this is the only luggage-forwarding/laundry/transport signal
+  // you'll see without expanding the stop (ROADMAP.md live-usage feedback;
+  // PlaceRow's own inline icon still covers the per-place luggage detail
+  // once expanded).
   const forwardingAway = places.filter((p) => p.forward_to_place_id !== null);
   const receivingHere = places.filter((p) =>
     allPlaces.some((op) => op.forward_to_place_id === p.id),
@@ -110,6 +112,16 @@ export function StopCard({
           .filter(Boolean)
           .join(" · ")
       : null;
+
+  const laundryPlaces = places.filter((p) => p.laundry_note !== null);
+  const laundryLabel =
+    laundryPlaces.length > 0
+      ? `Laundry available at ${laundryPlaces.map((p) => p.name).join(", ")}`
+      : null;
+
+  const transportLabel = stop.transport_mode
+    ? `Getting here: ${stop.transport_mode}`
+    : null;
 
   return (
     <section className="flex flex-col gap-3">
@@ -151,10 +163,24 @@ export function StopCard({
               })}
             </p>
           )}
-          {luggageLabel && (
-            <span title={luggageLabel} aria-label={luggageLabel}>
-              <Suitcase weight="duotone" size={18} />
-            </span>
+          {(luggageLabel || laundryLabel || transportLabel) && (
+            <div className="flex items-center gap-2">
+              {luggageLabel && (
+                <span title={luggageLabel} aria-label={luggageLabel}>
+                  <Suitcase weight="duotone" size={18} />
+                </span>
+              )}
+              {laundryLabel && (
+                <span title={laundryLabel} aria-label={laundryLabel}>
+                  <WashingMachine weight="duotone" size={18} />
+                </span>
+              )}
+              {transportLabel && (
+                <span title={transportLabel} aria-label={transportLabel}>
+                  <TransportModeIcon mode={stop.transport_mode!} size={18} />
+                </span>
+              )}
+            </div>
           )}
           <div className="flex flex-row flex-wrap items-center gap-2">
             <OpenInGoogleMapsLink lat={stop.lat} lng={stop.lng} />
