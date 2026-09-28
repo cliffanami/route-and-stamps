@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PencilSimple, Trash } from "@phosphor-icons/react";
+import { PencilSimple, Trash, Suitcase, Package, WashingMachine } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Tag";
 import { Dialog } from "@/components/ui/Dialog";
@@ -271,26 +271,6 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
       {proposedBy && <p className="text-muted">Proposed by {proposedBy}</p>}
       {place.note && <MarkdownText text={place.note} />}
 
-      {forwardingDestination && (
-        <p className="text-muted">
-          🧳 Forwarded to{" "}
-          <Link href={`/trips/${tripId}/places/${forwardingDestination.id}`}>
-            {forwardingDestination.name}
-          </Link>
-          {place.forwarding_note && ` — ${place.forwarding_note}`}
-        </p>
-      )}
-      {forwardedFromPlaces.map((origin) => (
-        <p key={origin.id} className="text-muted">
-          📦 Expect luggage from{" "}
-          <Link href={`/trips/${tripId}/places/${origin.id}`}>{origin.name}</Link>
-          {origin.forwarding_note && ` — ${origin.forwarding_note}`}
-        </p>
-      ))}
-      {place.laundry_note && (
-        <p className="text-muted">🧺 Laundry: {place.laundry_note}</p>
-      )}
-
       {consensus && <Tag variant="accent">Mutual must go</Tag>}
       {(place.is_accommodation || place.meal_tags.length > 0) && (
         <div className="flex flex-row gap-2">
@@ -313,6 +293,39 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
             .map((entry) => `${entry.member.displayName}: ${VOTE_LEVEL_LABEL[entry.level!]}`)
             .join(" · ")}
         </p>
+      )}
+
+      {(forwardingDestination || forwardedFromPlaces.length > 0 || place.laundry_note) && (
+        <div className="flex flex-col gap-1">
+          {forwardingDestination && (
+            <p className="flex items-start gap-2">
+              <Suitcase weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
+              <span className="text-muted">
+                Forwarded to{" "}
+                <Link href={`/trips/${tripId}/places/${forwardingDestination.id}`}>
+                  {forwardingDestination.name}
+                </Link>
+                {place.forwarding_note && ` — ${place.forwarding_note}`}
+              </span>
+            </p>
+          )}
+          {forwardedFromPlaces.map((origin) => (
+            <p key={origin.id} className="flex items-start gap-2">
+              <Package weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
+              <span className="text-muted">
+                Expect luggage from{" "}
+                <Link href={`/trips/${tripId}/places/${origin.id}`}>{origin.name}</Link>
+                {origin.forwarding_note && ` — ${origin.forwarding_note}`}
+              </span>
+            </p>
+          ))}
+          {place.laundry_note && (
+            <p className="flex items-start gap-2">
+              <WashingMachine weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
+              <span className="text-muted">Laundry: {place.laundry_note}</span>
+            </p>
+          )}
+        </div>
       )}
 
       {place.lat !== null && place.lng !== null && (
