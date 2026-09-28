@@ -659,6 +659,18 @@ Verified live: `npx tsc --noEmit` clean (one real type error caught and fixed al
 
 ---
 
+### AJ — Luggage-forwarding icon on the Route page — shipped (2026-09-28)
+
+**Goal:** live-usage feedback: the full forwarding summary (destination, note, laundry) already lives on a place's own Detail page — the Route page needed only a lightweight at-a-glance indicator, not a second copy of the same text.
+
+- `PlaceRow` now takes an `allPlaces` prop (every place on the trip, not just the current stop's) and resolves both forwarding directions: `place.forward_to_place_id` set → "forwarded to X"; some other place's `forward_to_place_id` points at this one → "arriving from X". Either case renders a single `Suitcase` (Phosphor duotone) icon next to the place's other tags, with the direction-specific text carried in `aria-label`/`title` rather than as visible copy — the full summary stays exclusively on the place's Detail page (unchanged).
+
+**Acceptance:** a place that forwards luggage away, and the place receiving it, each show a suitcase icon on the Route page; an unrelated place shows neither; the detail page's existing summary is untouched.
+
+Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-existing unrelated warning), full Vitest suite 228/228 passing. Production-build Playwright run (throwaway trip, one disposable account, an origin/destination accommodation pair plus an unrelated place) confirmed: the origin place's card carries `aria-label="Luggage forwarded to Destination Hotel"`, the destination's carries `aria-label="Luggage arriving from Origin Hotel"`, and the unrelated place has no luggage-related `aria-label` at all. Throwaway trip cleaned up afterward; direct DB query confirmed zero leftover rows.
+
+---
+
 ### Deferred — not scoped yet
 
 **Dashboard / trip-list layer.** The layer above a single trip — a landing page listing every trip you're in, search, and stat cards (trips planned/done/upcoming to start, later km covered and who you traveled with). Genuinely doesn't exist today: `/trips` just grabs your first trip and redirects straight into it, no list view at all. This is the concrete first slice of the "Multi-trip accounts" line already sitting in Beyond M9 below — explicit call to give it its own dedicated scoping session (same treatment Milestone G got) rather than sketch it in passing alongside smaller items.

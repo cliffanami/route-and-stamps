@@ -140,6 +140,7 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
                   votes={votes}
                   currentUserId={userId}
                   members={members}
+                  allPlaces={places}
                   onMustGoConsensus={setDatePromptPlace}
                 />
               ))
@@ -174,6 +175,7 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
                     votes={votes}
                     currentUserId={userId}
                     members={members}
+                    allPlaces={places}
                     onMustGoConsensus={setDatePromptPlace}
                   />
                   {orderedStops.length > 0 && (

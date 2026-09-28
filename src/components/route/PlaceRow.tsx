@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Suitcase } from "@phosphor-icons/react";
 import { Card, CardTitle, CardBody, CardMeta } from "@/components/ui/Card";
 import { MarkdownText } from "@/components/ui/MarkdownText";
 import { formatPlainDate } from "@/lib/text/format-plain-date";
@@ -18,6 +19,12 @@ interface PlaceRowProps {
   votes: Vote[];
   currentUserId: string | null;
   members: TripMember[];
+  // Every place on the trip, not just this stop's — needed to resolve
+  // both luggage-forwarding directions (who this place forwards to, who
+  // forwards to this place) without a second fetch. The full summary
+  // (destination, note, laundry) stays on the place's own Detail page;
+  // this is just an at-a-glance icon (live-usage feedback).
+  allPlaces: Place[];
   // Fires only on the not-mutual → mutual "must go" transition (ROADMAP.md
   // Milestone W), not on every vote — mirrors CheckInControl's onCheckedIn
   // shape: captured synchronously from the votes already in scope here,
@@ -45,6 +52,7 @@ export function PlaceRow({
   votes,
   currentUserId,
   members,
+  allPlaces,
   onMustGoConsensus,
 }: PlaceRowProps) {
   const castVote = useCastVote(tripId);
@@ -53,6 +61,18 @@ export function PlaceRow({
     placeVotes.find((v) => v.user_id === currentUserId)?.level ?? null;
   const memberIds = members.map((m) => m.user_id);
   const consensus = isMutualMustGo(placeVotes, memberIds);
+
+  const forwardsTo = place.forward_to_place_id
+    ? allPlaces.find((p) => p.id === place.forward_to_place_id)
+    : undefined;
+  const receivesFrom = allPlaces.filter(
+    (p) => p.forward_to_place_id === place.id,
+  );
+  const luggageLabel = forwardsTo
+    ? `Luggage forwarded to ${forwardsTo.name}`
+    : receivesFrom.length > 0
+      ? `Luggage arriving from ${receivesFrom.map((p) => p.name).join(", ")}`
+      : null;
 
   // What the other person voted (data was already fetched trip-wide by
   // useVotes; this is purely a display addition). Members who haven't
@@ -85,6 +105,11 @@ export function PlaceRow({
           {MEAL_TAG_LABEL[tag]}
         </Tag>
       ))}
+      {luggageLabel && (
+        <span title={luggageLabel} aria-label={luggageLabel}>
+          <Suitcase weight="duotone" size={18} />
+        </span>
+      )}
       {place.lat !== null && place.lng !== null && (
         <OpenInGoogleMapsLink lat={place.lat} lng={place.lng} />
       )}
