@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import { CaretDown, CaretUp, Suitcase } from "@phosphor-icons/react";
 import { Tag } from "@/components/ui/Tag";
 import { OpenInGoogleMapsLink } from "@/components/map/OpenInGoogleMapsLink";
 import { StopAreaMapLoader } from "@/components/map/StopAreaMapLoader";
@@ -14,6 +14,12 @@ interface StopCardProps {
   tripId: string;
   stop: Stop;
   places: Place[];
+  // Every place on the trip, not just this stop's — a place at this stop
+  // can be the *target* of another place's forward_to_place_id from a
+  // different stop entirely, so resolving "is luggage arriving here" needs
+  // the full list, the same reason PlaceRow needs it (ROADMAP.md live-usage
+  // feedback).
+  allPlaces: Place[];
   consensusCount: number;
   checkins: StopCheckin[];
   placeCheckins: PlaceCheckin[];
@@ -35,6 +41,7 @@ export function StopCard({
   tripId,
   stop,
   places,
+  allPlaces,
   consensusCount,
   checkins,
   placeCheckins,
@@ -84,6 +91,26 @@ export function StopCard({
       : formatPlainDate(stop.start_date)
     : null;
 
+  // Visible even collapsed — the caret hides places, not this header block
+  // — so this is the only luggage-forwarding signal you'll see without
+  // expanding the stop (ROADMAP.md live-usage feedback; PlaceRow's own
+  // inline icon still covers the per-place detail once expanded).
+  const forwardingAway = places.filter((p) => p.forward_to_place_id !== null);
+  const receivingHere = places.filter((p) =>
+    allPlaces.some((op) => op.forward_to_place_id === p.id),
+  );
+  const luggageLabel =
+    forwardingAway.length > 0 || receivingHere.length > 0
+      ? [
+          forwardingAway.length > 0 &&
+            `${forwardingAway.map((p) => p.name).join(", ")} forwarding luggage ahead`,
+          receivingHere.length > 0 &&
+            `${receivingHere.map((p) => p.name).join(", ")} receiving forwarded luggage`,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : null;
+
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
@@ -123,6 +150,11 @@ export function StopCard({
                 minute: "2-digit",
               })}
             </p>
+          )}
+          {luggageLabel && (
+            <span title={luggageLabel} aria-label={luggageLabel}>
+              <Suitcase weight="duotone" size={18} />
+            </span>
           )}
           <div className="flex flex-row flex-wrap items-center gap-2">
             <OpenInGoogleMapsLink lat={stop.lat} lng={stop.lng} />

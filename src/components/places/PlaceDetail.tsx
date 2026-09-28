@@ -295,39 +295,6 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
         </p>
       )}
 
-      {(forwardingDestination || forwardedFromPlaces.length > 0 || place.laundry_note) && (
-        <div className="flex flex-col gap-1">
-          {forwardingDestination && (
-            <p className="flex items-start gap-2">
-              <Suitcase weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
-              <span className="text-muted">
-                Forwarded to{" "}
-                <Link href={`/trips/${tripId}/places/${forwardingDestination.id}`}>
-                  {forwardingDestination.name}
-                </Link>
-                {place.forwarding_note && ` — ${place.forwarding_note}`}
-              </span>
-            </p>
-          )}
-          {forwardedFromPlaces.map((origin) => (
-            <p key={origin.id} className="flex items-start gap-2">
-              <Package weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
-              <span className="text-muted">
-                Expect luggage from{" "}
-                <Link href={`/trips/${tripId}/places/${origin.id}`}>{origin.name}</Link>
-                {origin.forwarding_note && ` — ${origin.forwarding_note}`}
-              </span>
-            </p>
-          ))}
-          {place.laundry_note && (
-            <p className="flex items-start gap-2">
-              <WashingMachine weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
-              <span className="text-muted">Laundry: {place.laundry_note}</span>
-            </p>
-          )}
-        </div>
-      )}
-
       {place.lat !== null && place.lng !== null && (
         <div className="flex flex-col gap-2">
           <LocationMapLoader lat={place.lat} lng={place.lng} title={place.name} />
@@ -412,6 +379,39 @@ export function PlaceDetail({ tripId, placeId }: PlaceDetailProps) {
           <PencilSimple weight="duotone" size={20} />
         </Button>
       </div>
+
+      {(forwardingDestination || forwardedFromPlaces.length > 0 || place.laundry_note) && (
+        <div className="flex flex-col gap-1">
+          {forwardingDestination && (
+            <p className="flex items-start gap-2">
+              <Suitcase weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
+              <span className="text-muted">
+                Forwarded to{" "}
+                <Link href={`/trips/${tripId}/places/${forwardingDestination.id}`}>
+                  {forwardingDestination.name}
+                </Link>
+                {place.forwarding_note && ` — ${place.forwarding_note}`}
+              </span>
+            </p>
+          )}
+          {forwardedFromPlaces.map((origin) => (
+            <p key={origin.id} className="flex items-start gap-2">
+              <Package weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
+              <span className="text-muted">
+                Expect luggage from{" "}
+                <Link href={`/trips/${tripId}/places/${origin.id}`}>{origin.name}</Link>
+                {origin.forwarding_note && ` — ${origin.forwarding_note}`}
+              </span>
+            </p>
+          ))}
+          {place.laundry_note && (
+            <p className="flex items-start gap-2">
+              <WashingMachine weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
+              <span className="text-muted">Laundry: {place.laundry_note}</span>
+            </p>
+          )}
+        </div>
+      )}
 
       <DetailTabs
         tabs={[

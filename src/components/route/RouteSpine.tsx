@@ -123,6 +123,7 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
             tripId={tripId}
             stop={stop}
             places={stopPlaces}
+            allPlaces={places}
             consensusCount={consensusCount}
             checkins={checkins}
             placeCheckins={placeCheckins}

@@ -675,6 +675,19 @@ Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-ex
 
 ---
 
+### AK — Luggage icon repositioned: stop-level on Route, above tabs on Place Detail — shipped (2026-09-28)
+
+**Goal:** live-usage feedback correcting AJ's placement: on the Route page, the icon belongs at the *stop* level — below "Arriving," above the "Open in Google Maps"/"I'm here" row — so it's visible even while the stop is collapsed (not buried inside a place card you have to expand first). On Place Detail, the summary belongs above the Overview/Tips/Costs/Todos tab bar, not inside the Overview tab's own content, so it's visible regardless of which tab is active.
+
+- `StopCard` now takes an `allPlaces` prop (every place on the trip) alongside its existing stop-scoped `places`, since a place at this stop can be the forwarding *target* of a place at a different stop entirely. Computes both directions across the stop's own places and renders one `Suitcase` icon (icon-only, direction detail in `aria-label`/`title`, matching `PlaceRow`'s established pattern) positioned between the "Arriving" line and the Google-Maps/check-in button row — inside the always-visible header block, not gated behind the expand caret.
+- `PlaceDetail`'s forwarding/laundry block moved from inside `overviewContent` (tab-scoped) to directly below the page header, above `<DetailTabs>` — same content, same icons (`Suitcase`/`Package`/`WashingMachine`) from the prior fix, just relocated so it persists across every tab.
+
+**Acceptance:** the Route page shows the luggage icon at the stop level without needing to expand it; the Place Detail page shows the forwarding/laundry summary above the tab bar, visible on Tips/Costs/Todos too, not just Overview.
+
+Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-existing unrelated warning), full Vitest suite 228/228 passing. Production-build Playwright run (throwaway trip, one disposable account, an origin/destination accommodation pair) confirmed via screenshot: the collapsed Kyoto stop card shows the suitcase icon directly between "Arriving Oct 28, 8:00 AM" and the Google-Maps/I'm-here buttons with no expansion needed; the Kiyomizu An place page shows "Forwarded to Tanakaya…" and "Laundry: …" directly below the page header, above the Overview/Tips/Costs/Todos tab bar. Throwaway trip cleaned up afterward; direct DB query confirmed zero leftover rows.
+
+---
+
 ### Deferred — not scoped yet
 
 **Dashboard / trip-list layer.** The layer above a single trip — a landing page listing every trip you're in, search, and stat cards (trips planned/done/upcoming to start, later km covered and who you traveled with). Genuinely doesn't exist today: `/trips` just grabs your first trip and redirects straight into it, no list view at all. This is the concrete first slice of the "Multi-trip accounts" line already sitting in Beyond M9 below — explicit call to give it its own dedicated scoping session (same treatment Milestone G got) rather than sketch it in passing alongside smaller items.
