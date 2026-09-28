@@ -89,7 +89,14 @@ export function PlaceRow({
   return (
     <Card>
       <CardTitle>
-        <Link href={`/trips/${tripId}/places/${place.id}`}>{place.name}</Link>
+        <span className="flex items-center gap-1">
+          <Link href={`/trips/${tripId}/places/${place.id}`}>{place.name}</Link>
+          {luggageLabel && (
+            <span title={luggageLabel} aria-label={luggageLabel}>
+              <Suitcase weight="duotone" size={16} />
+            </span>
+          )}
+        </span>
       </CardTitle>
       {place.town && <CardMeta>{place.town}</CardMeta>}
       {place.note && <CardBody><MarkdownText text={place.note} /></CardBody>}
@@ -105,11 +112,6 @@ export function PlaceRow({
           {MEAL_TAG_LABEL[tag]}
         </Tag>
       ))}
-      {luggageLabel && (
-        <span title={luggageLabel} aria-label={luggageLabel}>
-          <Suitcase weight="duotone" size={18} />
-        </span>
-      )}
       {place.lat !== null && place.lng !== null && (
         <OpenInGoogleMapsLink lat={place.lat} lng={place.lng} />
       )}
