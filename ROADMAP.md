@@ -700,6 +700,19 @@ Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-ex
 
 ---
 
+### AM — "Where you are today" card + Stop Detail luggage summary — shipped (2026-09-28)
+
+**Goal:** live-usage feedback — the Route page had a trip-wide countdown (`TripCountdown`) and a tomorrow-specific card (`TomorrowBanner`) but nothing for "today," and Stop Detail was missing a luggage summary alongside its existing "Getting here"/"Staying at" sections (both already shipped earlier this session).
+
+- New `TodayBanner`, sitting between `TripCountdown` and `TomorrowBanner`: finds the stop whose `start_date`..`end_date` range covers today (plain string comparison — `"YYYY-MM-DD"` sorts the same as the dates it represents) and links to its Stop Detail page. Deliberately date-range-derived, not check-in-derived — same passive, no-action-required logic `TomorrowBanner`/`TripCountdown` already use, consistent with the rest of the Route page's cards rather than introducing a third way (alongside `currentStopFromCheckins()`, the Map page's own zoom logic) to decide what "current" means. Discussed and confirmed with the user before building.
+- `StopDetail`'s Overview tab gained a "Luggage" section, right after the existing "Staying at" one, using the same forwarding-direction computation `StopCard`'s stop-level icon already established (a place at this stop can be the target of a place from a *different* stop, so it needs the trip-wide `places`, not just this stop's own). Full text summary (not icon-only, matching this page's existing "summary" posture) with links to both the place and its counterpart.
+
+**Acceptance:** the Route page shows a "Today" card linking to whichever stop's dates cover today, when one exists; Stop Detail shows a "Luggage" summary whenever any place at that stop is forwarding away or receiving forwarded luggage.
+
+Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-existing unrelated warning), full Vitest suite 232/232 passing (4 new `TodayBanner.test.tsx` cases: no match, multi-day match, single-day match, null `start_date`). Production-build Playwright run (throwaway trip, one disposable account, past/current/future stops plus an origin/destination accommodation pair) confirmed: the Today card correctly picks the one stop whose range covers today (not the past or future ones) and links to it; clicking through lands on that stop's Detail page; the Luggage section there shows both the "forwarded to" and "expecting luggage from" lines. Throwaway trip cleaned up afterward; direct DB query confirmed zero leftover rows.
+
+---
+
 ### Deferred — not scoped yet
 
 **Dashboard / trip-list layer.** The layer above a single trip — a landing page listing every trip you're in, search, and stat cards (trips planned/done/upcoming to start, later km covered and who you traveled with). Genuinely doesn't exist today: `/trips` just grabs your first trip and redirects straight into it, no list view at all. This is the concrete first slice of the "Multi-trip accounts" line already sitting in Beyond M9 below — explicit call to give it its own dedicated scoping session (same treatment Milestone G got) rather than sketch it in passing alongside smaller items.

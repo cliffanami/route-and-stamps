@@ -22,6 +22,7 @@ import { AddStopForm } from "./AddStopForm";
 import { FunFactsFeed } from "./FunFactsFeed";
 import { ItineraryView } from "./ItineraryView";
 import { MustGoDatePrompt } from "./MustGoDatePrompt";
+import { TodayBanner } from "./TodayBanner";
 import { TomorrowBanner } from "./TomorrowBanner";
 import { TripCountdown } from "./TripCountdown";
 import type { Place } from "@/types/database.types";
@@ -225,6 +226,8 @@ export function RouteSpine({ tripId }: RouteSpineProps) {
       )}
 
       {trip && <TripCountdown trip={trip} />}
+
+      <TodayBanner tripId={tripId} stops={stops} />
 
       <TomorrowBanner tripId={tripId} places={places} stops={stops} todos={todos} />
 

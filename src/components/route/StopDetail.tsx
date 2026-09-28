@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PencilSimple, Trash } from "@phosphor-icons/react";
+import { PencilSimple, Trash, Suitcase, Package } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { DeleteConfirmDialog } from "@/components/ui/DeleteConfirmDialog";
@@ -98,6 +98,14 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
   );
   const stopCosts = budgetLines.filter((b) => b.stop_id === stopId);
   const placeNameById = new Map(places.map((p) => [p.id, p.name]));
+  // Same computation StopCard's own stop-level icon uses (ROADMAP.md
+  // live-usage feedback) — forwarding is a place attribute, but a place
+  // outside this stop can still target one inside it, so this needs the
+  // trip-wide `places`, not just `stopPlaces`.
+  const forwardingAway = stopPlaces.filter((p) => p.forward_to_place_id !== null);
+  const receivingHere = stopPlaces.filter((p) =>
+    places.some((op) => op.forward_to_place_id === p.id),
+  );
   const iAmCheckedIn = checkins.some(
     (c) => c.stop_id === stopId && c.user_id === userId,
   );
@@ -270,6 +278,47 @@ export function StopDetail({ tripId, stopId }: StopDetailProps) {
               {place.name}
             </Link>
           ))}
+        </div>
+      )}
+
+      {(forwardingAway.length > 0 || receivingHere.length > 0) && (
+        <div className="flex flex-col gap-1">
+          <h2>Luggage</h2>
+          {forwardingAway.map((place) => {
+            const destination = places.find((p) => p.id === place.forward_to_place_id);
+            return (
+              <p key={place.id} className="flex items-start gap-2">
+                <Suitcase weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
+                <span className="text-muted">
+                  <Link href={`/trips/${tripId}/places/${place.id}`}>{place.name}</Link>{" "}
+                  forwarded to{" "}
+                  {destination ? (
+                    <Link href={`/trips/${tripId}/places/${destination.id}`}>
+                      {destination.name}
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
+                  {place.forwarding_note && ` — ${place.forwarding_note}`}
+                </span>
+              </p>
+            );
+          })}
+          {receivingHere.flatMap((place) =>
+            places
+              .filter((origin) => origin.forward_to_place_id === place.id)
+              .map((origin) => (
+                <p key={`${place.id}-${origin.id}`} className="flex items-start gap-2">
+                  <Package weight="duotone" size={18} className="shrink-0" style={{ marginTop: 2 }} />
+                  <span className="text-muted">
+                    <Link href={`/trips/${tripId}/places/${place.id}`}>{place.name}</Link>{" "}
+                    expecting luggage from{" "}
+                    <Link href={`/trips/${tripId}/places/${origin.id}`}>{origin.name}</Link>
+                    {origin.forwarding_note && ` — ${origin.forwarding_note}`}
+                  </span>
+                </p>
+              )),
+          )}
         </div>
       )}
 
