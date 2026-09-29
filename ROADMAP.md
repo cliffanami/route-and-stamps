@@ -713,6 +713,19 @@ Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean (same one pre-ex
 
 ---
 
+### AN — Map tiles broken: CARTO started requiring an API key — fixed (2026-09-29)
+
+**Goal:** live-usage feedback: "the map says api key needed." Every Leaflet map in the app (`MapView`, `StopAreaMap`, `LocationMap`) shares one tile config, and CARTO — the provider it was on — silently started gating every basemap style (confirmed: Voyager *and* Positron) behind a required API key. The tile URL still returns HTTP 200, just with a baked-in "API KEY REQUIRED — carto.com/basemaps/apikey" placeholder image instead of an error, so this broke silently rather than throwing anywhere in the app's own code — nothing to catch, since as far as fetch/Leaflet are concerned the request succeeded.
+
+- Tested several keyless alternatives directly (fetching real tiles over Tokyo, not just checking HTTP status) before picking one: raw OpenStreetMap tiles work but bake in Japanese-only labels (世田谷, 狛江市ホ — the exact problem CARTO was originally chosen to avoid); Stadia and Wikimedia's tile services both rejected the request outright; CARTO's legacy endpoint doesn't resolve. Esri's World Street Map (`server.arcgisonline.com/.../World_Street_Map/...`) came back with genuinely bilingual labels (e.g. "Setagaya-Daita Sta. / 世田谷代田駅"), still free and keyless — arguably a better outcome than Voyager's Latin-only labels for a trip like this one.
+- `tile-layer-config.ts` (the shared source every Leaflet map imports) updated: new URL, attribution changed to Esri's required credit line, and `TILE_LAYER_SUBDOMAINS` emptied — Esri's tile service is a single host with no `{s}` sharding, unlike CARTO's a/b/c/d. Also had to flip the tile path order: Esri's REST tile convention is `{z}/{y}/{x}`, the reverse of the `{z}/{x}/{y}` convention CARTO/OSM/every other provider in this app used.
+
+**Acceptance:** every map in the app (trip overview, stop-area, single-location) renders real street tiles again, not the API-key placeholder.
+
+Verified live: `npx tsc --noEmit` clean, `npx eslint src` clean, full Vitest suite 232/232 passing (no logic changed, just config constants — nothing new to unit test). Production-build Playwright screenshot of the trip map over central Tokyo confirmed real, detailed street tiles with bilingual place labels and the correct "Tiles © Esri — Source: Esri, DeLorme, NAVTEQ…" attribution rendering at the bottom — no watermark. Throwaway trip cleaned up afterward; direct DB query confirmed zero leftover rows.
+
+---
+
 ### Deferred — not scoped yet
 
 **Dashboard / trip-list layer.** The layer above a single trip — a landing page listing every trip you're in, search, and stat cards (trips planned/done/upcoming to start, later km covered and who you traveled with). Genuinely doesn't exist today: `/trips` just grabs your first trip and redirects straight into it, no list view at all. This is the concrete first slice of the "Multi-trip accounts" line already sitting in Beyond M9 below — explicit call to give it its own dedicated scoping session (same treatment Milestone G got) rather than sketch it in passing alongside smaller items.
